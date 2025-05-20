@@ -9,6 +9,27 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ArrowLeft, Mail, FileText, Download, Copy, Check, ExternalLink } from "lucide-react"
 
 // Types
+type Drill = {
+  id: string
+  name: string
+  description: string
+  duration: number
+  category: string
+  skillLevel: string
+  players: string
+  equipment: string[]
+  sport: string
+  objectives: string[]
+  type: string
+  isCustom?: boolean
+  setup?: string
+  instructions?: string
+  variations?: string
+  tips?: string
+  imageUrl?: string
+  videoUrl?: string
+}
+
 type PracticeDrill = {
   id: string
   drillId: string
@@ -16,6 +37,11 @@ type PracticeDrill = {
   duration: number
   description: string
   notes?: string
+  type?: string
+  skillLevel?: string
+  category?: string
+  players?: string
+  equipment?: string[]
 }
 
 type PracticePlan = {
@@ -129,14 +155,160 @@ const sampleSavedPlans: PracticePlan[] = [
   },
 ]
 
+// Sample drills data to match the build page
+const sampleDrills: Drill[] = [
+  {
+    id: "drill-1",
+    name: "Passing Triangle",
+    description: "Players form triangles and practice passing and movement",
+    duration: 15,
+    category: "Passing",
+    skillLevel: "Intermediate",
+    players: "9+",
+    equipment: ["Balls", "Cones"],
+    sport: "soccer",
+    objectives: ["Improve passing accuracy", "Develop movement off the ball"],
+    type: "Drills",
+    setup: "Set up three cones in a triangle formation, approximately 10 yards apart. Place three players at each cone.",
+    instructions: `1. Player A passes to Player B and then runs to take B's position
+2. Player B receives the ball, passes to Player C, and runs to take C's position
+3. Player C receives the ball, passes to Player A's replacement, and runs to take the new position
+4. Continue this pattern, focusing on accurate passes and proper receiving technique`,
+    variations: `- Limit touches to one or two
+- Add defensive pressure
+- Change the size of the triangle based on skill level
+- Add a fourth cone to create a diamond pattern`,
+    tips: `- Emphasize communication between players
+- Focus on proper weight of passes
+- Encourage players to check to the ball when receiving`,
+    imageUrl: "/placeholder.svg?height=300&width=400",
+  },
+  {
+    id: "drill-2",
+    name: "Shooting Practice",
+    description: "Players take turns shooting at goal from various positions",
+    duration: 20,
+    category: "Shooting",
+    skillLevel: "All Levels",
+    players: "6+",
+    equipment: ["Balls", "Goals"],
+    sport: "soccer",
+    objectives: ["Improve shooting accuracy", "Practice different shooting techniques"],
+    type: "Drills",
+    setup: "Set up a goal with a goalkeeper. Place cones at various distances and angles from the goal to mark shooting positions.",
+    instructions: `1. Players line up at the first cone position
+2. Each player takes a shot on goal
+3. After shooting, players retrieve their ball and move to the next position
+4. Continue rotating through all positions`,
+    variations: `- Add a defender
+- Limit to one-touch finishing
+- Add a passing combination before shooting
+- Time-based challenges`,
+    tips: `- Focus on proper shooting technique
+- Encourage players to aim for the corners
+- Vary the shooting distance based on age and ability`,
+    imageUrl: "/placeholder.svg?height=300&width=400",
+    videoUrl: "https://www.youtube.com/watch?v=example",
+  },
+  {
+    id: "drill-3",
+    name: "1v1 Defending",
+    description: "Players practice 1v1 defending techniques in a confined space",
+    duration: 15,
+    category: "Defending",
+    skillLevel: "Intermediate",
+    players: "8+",
+    equipment: ["Balls", "Cones", "Pinnies"],
+    sport: "soccer",
+    objectives: ["Improve defensive positioning", "Practice containment and tackling"],
+    type: "Drills",
+  },
+  {
+    id: "drill-4",
+    name: "Small-Sided Game",
+    description: "4v4 small-sided game with focus on quick transitions",
+    duration: 25,
+    category: "Game Play",
+    skillLevel: "All Levels",
+    players: "8+",
+    equipment: ["Balls", "Cones", "Pinnies"],
+    sport: "soccer",
+    objectives: ["Apply skills in game situations", "Develop decision making"],
+    type: "Scrimmage",
+  },
+  {
+    id: "drill-5",
+    name: "Dribbling Relay",
+    duration: 10,
+    category: "Dribbling",
+    skillLevel: "Beginner",
+    players: "6+",
+    equipment: ["Balls", "Cones"],
+    sport: "soccer",
+    objectives: ["Improve dribbling control", "Add competitive element"],
+    type: "Drills",
+    description: "Teams compete in a dribbling relay race through cones",
+  },
+  {
+    id: "drill-7",
+    name: "Warm-up Jog & Stretch",
+    duration: 10,
+    category: "Warm-up",
+    skillLevel: "All Levels",
+    players: "Any",
+    equipment: [],
+    sport: "soccer",
+    objectives: ["Prepare body for activity", "Prevent injuries"],
+    type: "Stretching",
+    description: "Light jogging followed by dynamic stretching routine",
+  },
+  {
+    id: "drill-8",
+    name: "Cool Down & Stretch",
+    duration: 10,
+    category: "Cool Down",
+    skillLevel: "All Levels",
+    players: "Any",
+    equipment: [],
+    sport: "soccer",
+    objectives: ["Gradually lower heart rate", "Improve flexibility"],
+    type: "Cooldown",
+    description: "Light activity followed by static stretching",
+  },
+  {
+    id: "drill-11",
+    name: "Defensive Shape",
+    duration: 20,
+    category: "Defending",
+    skillLevel: "Intermediate",
+    players: "11+",
+    equipment: ["Balls", "Cones", "Pinnies"],
+    sport: "soccer",
+    objectives: ["Improve team defensive organization", "Practice shifting and covering"],
+    type: "Drills",
+    description: "Team works on maintaining defensive shape against attackers",
+  },
+];
+
+// Helper function to find the full drill details
+const findDrillById = (drillId: string): Drill | undefined => {
+  return sampleDrills.find(drill => drill.id === drillId);
+};
+
 export default function ExportPage() {
   const searchParams = useSearchParams()
   const planId = searchParams.get("id")
   const [plan, setPlan] = useState<PracticePlan | null>(null)
+  
+  // Function to find a drill by its ID from the sample drills
+  const findDrillById = (drillId: string) => {
+    return sampleDrills.find(drill => drill.id === drillId)
+  }
   const [copied, setCopied] = useState(false)
   const [activeTab, setActiveTab] = useState("graphic-email")
   const [copiedHTML, setCopiedHTML] = useState(false)
   const [mailtoUrl, setMailtoUrl] = useState("")
+  const [expandedDrills, setExpandedDrills] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
     // First try to find the plan in saved plans
@@ -206,11 +378,54 @@ export default function ExportPage() {
     text += `DRILL SEQUENCE:\n\n`
 
     plan.drills.forEach((drill, index) => {
+      // Find the full drill details
+      const fullDrill = findDrillById(drill.drillId);
+      
       text += `${index + 1}. ${drill.name} (${drill.duration} minutes)\n`
-      text += `   ${drill.description}\n\n`
+      text += `   ${drill.description}\n`
+      
+      // Add category, skill level, type, and players if available
+      if (fullDrill?.category || fullDrill?.skillLevel || fullDrill?.type || fullDrill?.players) {
+        text += `   `
+        if (fullDrill?.category) text += `Category: ${fullDrill.category} | `
+        if (fullDrill?.skillLevel) text += `Level: ${fullDrill.skillLevel} | `
+        if (fullDrill?.type) text += `Type: ${fullDrill.type} | `
+        if (fullDrill?.players) text += `Players: ${fullDrill.players}`
+        text += `\n`
+      }
+      
+      // Add equipment if available
+      if (fullDrill?.equipment && fullDrill.equipment.length > 0) {
+        text += `   Equipment: ${fullDrill.equipment.join(", ")}\n`
+      }
+      
+      // Add objectives if available
+      if (fullDrill?.objectives && fullDrill.objectives.length > 0) {
+        text += `   Objectives:\n`
+        fullDrill.objectives.forEach(objective => {
+          text += `     - ${objective}\n`
+        })
+      }
+      
+      // Add setup if available
+      if (fullDrill?.setup) {
+        text += `   Setup: ${fullDrill.setup}\n`
+      }
+      
+      // Add instructions if available
+      if (fullDrill?.instructions) {
+        text += `   Instructions:\n${fullDrill.instructions.split('\n').map(line => `     ${line}`).join('\n')}\n`
+      }
+      
+      // Add notes if available
+      if (drill.notes) {
+        text += `   Notes: ${drill.notes}\n`
+      }
+      
+      text += `\n`
     })
 
-    text += `Generated with CoachCraft - The Ultimate Training Planning Tool`
+    text += `Generated with Coaching Beast - The Ultimate Training Planning Tool`
 
     return text
   }
@@ -239,6 +454,10 @@ export default function ExportPage() {
     .drill-number { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; background-color: #3b82f6; color: white; border-radius: 50%; font-size: 12px; margin-right: 8px; }
     .drill-duration { color: #3b82f6; font-weight: bold; }
     .drill-description { font-size: 14px; color: #555; }
+    .drill-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; font-size: 12px; color: #666; }
+    .drill-equipment, .drill-objectives, .drill-setup, .drill-instructions, .drill-notes { margin-top: 8px; font-size: 12px; color: #666; }
+    .drill-objectives ul { margin-top: 4px; margin-bottom: 0; padding-left: 20px; }
+    .drill-instructions div { white-space: pre-line; margin-top: 4px; }
     .footer { background-color: #f0f7ff; border-radius: 8px; padding: 12px; font-size: 14px; color: #3b82f6; }
     .footer-note { font-size: 12px; color: #999; margin-top: 5px; }
     .logo { text-align: right; }
@@ -263,6 +482,58 @@ export default function ExportPage() {
           <div class="drill-duration">${drill.duration} min</div>
         </div>
         <div class="drill-description">${drill.description}</div>
+        
+        ${(() => {
+          // Find the full drill details
+          const fullDrill = findDrillById(drill.drillId);
+          let detailsHtml = '';
+          
+          // Add category, skill level, type, and players if available
+          if (fullDrill?.category || fullDrill?.skillLevel || fullDrill?.type || fullDrill?.players) {
+            detailsHtml += '<div class="drill-meta" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; font-size: 12px; color: #666;">';
+            if (fullDrill?.category) detailsHtml += `<div><strong>Category:</strong> ${fullDrill.category}</div>`;
+            if (fullDrill?.skillLevel) detailsHtml += `<div><strong>Level:</strong> ${fullDrill.skillLevel}</div>`;
+            if (fullDrill?.type) detailsHtml += `<div><strong>Type:</strong> ${fullDrill.type}</div>`;
+            if (fullDrill?.players) detailsHtml += `<div><strong>Players:</strong> ${fullDrill.players}</div>`;
+            detailsHtml += '</div>';
+          }
+          
+          // Add equipment if available
+          if (fullDrill?.equipment && fullDrill.equipment.length > 0) {
+            detailsHtml += `<div class="drill-equipment" style="margin-top: 8px; font-size: 12px; color: #666;"><strong>Equipment:</strong> ${fullDrill.equipment.join(", ")}</div>`;
+          }
+          
+          // Add objectives if available
+          if (fullDrill?.objectives && fullDrill.objectives.length > 0) {
+            detailsHtml += '<div class="drill-objectives" style="margin-top: 8px; font-size: 12px; color: #666;">';
+            detailsHtml += '<strong>Objectives:</strong>';
+            detailsHtml += '<ul style="margin-top: 4px; margin-bottom: 0; padding-left: 20px;">';
+            fullDrill.objectives.forEach(objective => {
+              detailsHtml += `<li>${objective}</li>`;
+            });
+            detailsHtml += '</ul></div>';
+          }
+          
+          // Add setup if available
+          if (fullDrill?.setup) {
+            detailsHtml += `<div class="drill-setup" style="margin-top: 8px; font-size: 12px; color: #666;"><strong>Setup:</strong> ${fullDrill.setup}</div>`;
+          }
+          
+          // Add instructions if available
+          if (fullDrill?.instructions) {
+            detailsHtml += '<div class="drill-instructions" style="margin-top: 8px; font-size: 12px; color: #666;">';
+            detailsHtml += '<strong>Instructions:</strong>';
+            detailsHtml += `<div style="white-space: pre-line; margin-top: 4px;">${fullDrill.instructions}</div>`;
+            detailsHtml += '</div>';
+          }
+          
+          // Add notes if available
+          if (drill.notes) {
+            detailsHtml += `<div class="drill-notes" style="margin-top: 8px; font-size: 12px; color: #666;"><strong>Notes:</strong> ${drill.notes}</div>`;
+          }
+          
+          return detailsHtml;
+        })()}
       </div>
     `
     })
@@ -272,7 +543,7 @@ export default function ExportPage() {
     
     <div class="footer">
       <div><strong>Total Duration:</strong> ${plan.duration} minutes</div>
-      <div class="footer-note">Generated with CoachCraft - The Ultimate Training Planning Tool</div>
+      <div class="footer-note">Generated with Coaching Beast - The Ultimate Training Planning Tool</div>
     </div>
   </div>
 </body>
@@ -286,7 +557,7 @@ export default function ExportPage() {
   const generateMIMEEmail = () => {
     if (!plan) return ""
 
-    const boundary = "==CoachCraft_Boundary_" + Math.random().toString(36).substring(2)
+    const boundary = "==CoachingBeast_Boundary_" + Math.random().toString(36).substring(2)
     const subject = `Training Plan: ${plan.name}`
     const plainText = generatePlainText()
     const html = generateHTML()
@@ -470,6 +741,81 @@ ${html.replace(/([=])/g, "=$1").replace(/\n/g, "=0A")}
                               <div className="text-sm font-medium text-blue-400">{drill.duration} min</div>
                             </div>
                             <p className="mt-1 text-sm text-white/80">{drill.description}</p>
+                            
+                            {/* Find the full drill details */}
+                            {(() => {
+                              const fullDrill = findDrillById(drill.drillId);
+                              if (!fullDrill) return null;
+                              
+                              return (
+                                <div className="mt-3 space-y-2 border-t border-white/10 pt-2">
+                                  {/* Basic info grid */}
+                                  <div className="grid grid-cols-2 gap-2 text-xs">
+                                    {fullDrill.category && (
+                                      <div className="text-white/70">
+                                        <span className="font-medium text-white/90">Category:</span> {fullDrill.category}
+                                      </div>
+                                    )}
+                                    {fullDrill.skillLevel && (
+                                      <div className="text-white/70">
+                                        <span className="font-medium text-white/90">Level:</span> {fullDrill.skillLevel}
+                                      </div>
+                                    )}
+                                    {fullDrill.type && (
+                                      <div className="text-white/70">
+                                        <span className="font-medium text-white/90">Type:</span> {fullDrill.type}
+                                      </div>
+                                    )}
+                                    {fullDrill.players && (
+                                      <div className="text-white/70">
+                                        <span className="font-medium text-white/90">Players:</span> {fullDrill.players}
+                                      </div>
+                                    )}
+                                  </div>
+                                  
+                                  {/* Equipment */}
+                                  {fullDrill.equipment && fullDrill.equipment.length > 0 && (
+                                    <div className="text-xs text-white/70">
+                                      <span className="font-medium text-white/90">Equipment:</span> {fullDrill.equipment.join(", ")}
+                                    </div>
+                                  )}
+                                  
+                                  {/* Objectives */}
+                                  {fullDrill.objectives && fullDrill.objectives.length > 0 && (
+                                    <div className="text-xs text-white/70">
+                                      <span className="font-medium text-white/90">Objectives:</span>
+                                      <ul className="mt-1 list-inside list-disc pl-2">
+                                        {fullDrill.objectives.map((objective, i) => (
+                                          <li key={i}>{objective}</li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                  )}
+                                  
+                                  {/* Setup */}
+                                  {fullDrill.setup && (
+                                    <div className="text-xs text-white/70">
+                                      <span className="font-medium text-white/90">Setup:</span> {fullDrill.setup}
+                                    </div>
+                                  )}
+                                  
+                                  {/* Instructions */}
+                                  {fullDrill.instructions && (
+                                    <div className="text-xs text-white/70">
+                                      <span className="font-medium text-white/90">Instructions:</span>
+                                      <div className="mt-1 whitespace-pre-line pl-2">{fullDrill.instructions}</div>
+                                    </div>
+                                  )}
+                                  
+                                  {/* Notes */}
+                                  {drill.notes && (
+                                    <div className="text-xs text-white/70">
+                                      <span className="font-medium text-white/90">Notes:</span> {drill.notes}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })()}
                           </div>
                         ))}
                       </div>
@@ -478,37 +824,10 @@ ${html.replace(/([=])/g, "=$1").replace(/\n/g, "=0A")}
                     <div className="flex items-center justify-between rounded-lg bg-blue-950/30 p-4 text-sm">
                       <div>
                         <p className="font-medium text-blue-300">Total Duration: {plan.duration} minutes</p>
-                        <p className="text-white/70">Created with CoachCraft</p>
+                        <p className="text-white/70">Created with Coaching Beast</p>
                       </div>
                       <div className="h-10 w-10">
-                        <svg
-                          viewBox="0 0 24 24"
-                          className="h-10 w-10 text-blue-400"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            d="M12 2L2 7L12 12L22 7L12 2Z"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                          <path
-                            d="M2 17L12 22L22 17"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                          <path
-                            d="M2 12L12 17L22 12"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
+                        <img src="/coaching-beast-icon.svg" alt="Coaching Beast Icon" className="h-10 w-10" />
                       </div>
                     </div>
                   </div>
@@ -644,20 +963,86 @@ ${html.replace(/([=])/g, "=$1").replace(/\n/g, "=0A")}
                       <div className="flex-1">
                         <h3 className="mb-4 text-lg font-semibold text-black">Drill Sequence</h3>
                         <div className="space-y-4">
-                          {plan.drills.slice(0, 3).map((drill, index) => (
-                            <div key={drill.id} className="rounded-md border border-gray-200 bg-gray-50 p-3">
-                              <div className="flex justify-between">
-                                <div className="flex items-center gap-2">
-                                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-xs font-medium text-white">
-                                    {index + 1}
+                          {plan.drills.slice(0, 3).map((drill, index) => {
+                            // Find the full drill details
+                            const fullDrill = findDrillById(drill.drillId);
+                            return (
+                              <div key={drill.id} className="rounded-md border border-gray-200 bg-gray-50 p-3">
+                                <div className="flex justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-xs font-medium text-white">
+                                      {index + 1}
+                                    </div>
+                                    <h4 className="font-medium text-black">{drill.name}</h4>
                                   </div>
-                                  <h4 className="font-medium text-black">{drill.name}</h4>
+                                  <div className="text-sm font-medium text-blue-600">{drill.duration} min</div>
                                 </div>
-                                <div className="text-sm font-medium text-blue-600">{drill.duration} min</div>
+                                <p className="mt-1 text-sm text-gray-600">{drill.description}</p>
+                                
+                                {/* Additional drill details */}
+                                <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-gray-500">
+                                  {fullDrill?.category && (
+                                    <div>
+                                      <span className="font-medium">Category:</span> {fullDrill.category}
+                                    </div>
+                                  )}
+                                  {fullDrill?.skillLevel && (
+                                    <div>
+                                      <span className="font-medium">Level:</span> {fullDrill.skillLevel}
+                                    </div>
+                                  )}
+                                  {fullDrill?.type && (
+                                    <div>
+                                      <span className="font-medium">Type:</span> {fullDrill.type}
+                                    </div>
+                                  )}
+                                  {fullDrill?.players && (
+                                    <div>
+                                      <span className="font-medium">Players:</span> {fullDrill.players}
+                                    </div>
+                                  )}
+                                </div>
+                                
+                                {fullDrill?.equipment && fullDrill.equipment.length > 0 && (
+                                  <div className="mt-2 text-xs text-gray-500">
+                                    <span className="font-medium">Equipment:</span> {fullDrill.equipment.join(", ")}
+                                  </div>
+                                )}
+                                
+                                {fullDrill?.objectives && fullDrill.objectives.length > 0 && (
+                                  <div className="mt-2 text-xs text-gray-500">
+                                    <span className="font-medium">Objectives:</span>
+                                    <ul className="list-disc pl-5 mt-1">
+                                      {fullDrill.objectives.map((objective, i) => (
+                                        <li key={i}>{objective}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+                                
+                                {fullDrill?.setup && (
+                                  <div className="mt-2 text-xs text-gray-500">
+                                    <span className="font-medium">Setup:</span>
+                                    <p className="mt-1">{fullDrill.setup}</p>
+                                  </div>
+                                )}
+                                
+                                {fullDrill?.instructions && (
+                                  <div className="mt-2 text-xs text-gray-500">
+                                    <span className="font-medium">Instructions:</span>
+                                    <p className="mt-1 whitespace-pre-line">{fullDrill.instructions}</p>
+                                  </div>
+                                )}
+                                
+                                {drill.notes && (
+                                  <div className="mt-2 text-xs text-gray-500">
+                                    <span className="font-medium">Practice Notes:</span>
+                                    <p className="mt-1">{drill.notes}</p>
+                                  </div>
+                                )}
                               </div>
-                              <p className="mt-1 text-sm text-gray-600">{drill.description}</p>
-                            </div>
-                          ))}
+                            );
+                          })}
                           {plan.drills.length > 3 && (
                             <div className="text-center text-gray-400">
                               + {plan.drills.length - 3} more drills (preview only)
@@ -671,7 +1056,7 @@ ${html.replace(/([=])/g, "=$1").replace(/\n/g, "=0A")}
                           <span className="font-medium">Total Duration:</span> {plan.duration} minutes
                         </p>
                         <p className="text-xs text-gray-500">
-                          Generated with CoachCraft - The Ultimate Training Planning Tool
+                          Generated with Coaching Beast - The Ultimate Training Planning Tool
                         </p>
                       </div>
                     </div>

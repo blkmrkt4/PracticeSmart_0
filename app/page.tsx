@@ -10,6 +10,7 @@ import {
   FileText,
   ChevronRight,
   Menu,
+  PenLine,
 } from "lucide-react"
 
 export default function LandingPage() {
@@ -20,35 +21,16 @@ export default function LandingPage() {
         <div className="container flex h-16 items-center justify-between px-4 md:px-6">
           <div className="flex items-center gap-2">
             <div className="relative h-8 w-8">
-              <svg viewBox="0 0 24 24" className="h-8 w-8 text-white" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path
-                  d="M12 2L2 7L12 12L22 7L12 2Z"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <path
-                  d="M2 17L12 22L22 17"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <path
-                  d="M2 12L12 17L22 12"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+              <img src="/coaching-beast-icon.svg" alt="Coaching Beast Icon" className="h-8 w-8" />
             </div>
-            <span className="text-xl font-bold">CoachCraft</span>
+            <span className="text-xl font-bold">Coaching Beast</span>
           </div>
           <nav className="hidden md:flex items-center gap-6">
             <Link href="/build" className="text-sm font-medium text-white/70 transition-colors hover:text-white">
               Create a Plan
+            </Link>
+            <Link href="/activities/new" className="text-sm font-medium text-white/70 transition-colors hover:text-white">
+              New Activity
             </Link>
             <Link
               href="/build?view=saved"
@@ -122,7 +104,7 @@ export default function LandingPage() {
                   src="/placeholder.svg?height=600&width=800"
                   width={800}
                   height={600}
-                  alt="CoachCraft interface showing a practice plan builder"
+                  alt="Coaching Beast interface showing a practice plan builder"
                   className="w-full h-auto"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
@@ -463,17 +445,22 @@ export default function LandingPage() {
             <div className="absolute top-12 left-0 right-0 h-1 bg-gradient-to-r from-blue-500/50 via-purple-500/50 to-green-500/50 hidden md:block" />
 
             {/* Timeline steps */}
-            <div className="grid grid-cols-1 md:grid-cols-6 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-7 gap-8">
               {[
                 {
                   icon: <Football className="h-6 w-6" />,
-                  title: "Select Sport",
-                  description: "Choose from multiple sports with specialized activity libraries for each",
+                  title: "Select Sport or Activity",
+                  description: "Choose from a wide range of sports and activities with specialized libraries",
                 },
                 {
                   icon: <Timer className="h-6 w-6" />,
                   title: "Choose Duration",
                   description: "Set your training length and automatically divide into optimal segments",
+                },
+                {
+                  icon: <PenLine className="h-6 w-6" />,
+                  title: "Create New Activity",
+                  description: "Design custom activities tailored to your team's specific needs",
                 },
                 {
                   icon: <Library className="h-6 w-6" />,
@@ -510,6 +497,8 @@ export default function LandingPage() {
                 </div>
               ))}
             </div>
+
+
           </div>
         </div>
       </section>
@@ -937,7 +926,7 @@ export default function LandingPage() {
                     />
                   </svg>
                 </div>
-                <span className="text-xl font-bold">CoachCraft</span>
+                <span className="text-xl font-bold">Coaching Beast</span>
               </div>
               <p className="text-sm text-white/70">
                 The ultimate practice planning tool for coaches of all sports and levels.
@@ -1054,7 +1043,7 @@ export default function LandingPage() {
           </div>
 
           <div className="mt-12 border-t border-white/10 pt-6 flex flex-col md:flex-row justify-between items-center">
-            <p className="text-xs text-white/50">&copy; {new Date().getFullYear()} CoachCraft. All rights reserved.</p>
+            <p className="text-xs text-white/50">&copy; {new Date().getFullYear()} Coaching Beast. All rights reserved.</p>
             <p className="text-xs text-white/50 mt-2 md:mt-0">Designed for coaches, by coaches</p>
           </div>
         </div>

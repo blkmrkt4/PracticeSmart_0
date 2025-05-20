@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { toast } from "@/components/ui/use-toast"
+import { SportsActivitiesSelect } from "@/components/sports-activities-select"
 import {
   Search,
   Filter,
@@ -506,6 +507,8 @@ export default function BuildPage() {
   const [selectedCategory, setSelectedCategory] = useState("All")
   const [selectedType, setSelectedType] = useState("All Types")
   const [searchQuery, setSearchQuery] = useState("")
+  const [expandedDrills, setExpandedDrills] = useState<Record<string, boolean>>({})
+  const [allExpanded, setAllExpanded] = useState(false)
   const [currentPlan, setCurrentPlan] = useState<PracticePlan>({
     id: `plan-${Date.now()}`,
     name: "New Training Plan",
@@ -549,8 +552,11 @@ export default function BuildPage() {
   // Filter drills based on search, category, and type
   // Combine sample and custom drills, then filter
   const allDrills = [...sampleDrills, ...customDrills]
+  
+  // Extract unique sport values from available drills
+  const availableSports = Array.from(new Set(allDrills.map(drill => drill.sport)))
   const filteredDrills = allDrills.filter((drill) => {
-    const matchesSport = drill.sport === selectedSport
+    const matchesSport = selectedSport === "all" || drill.sport === selectedSport
     const matchesCategory = selectedCategory === "All" || drill.category === selectedCategory
     const matchesType = selectedType === "All Types" || drill.type === selectedType
     const matchesSearch =
@@ -780,31 +786,9 @@ export default function BuildPage() {
           <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center gap-2">
               <div className="relative h-8 w-8">
-                <svg viewBox="0 0 24 24" className="h-8 w-8 text-white" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path
-                    d="M12 2L2 7L12 12L22 7L12 2Z"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M2 17L12 22L22 17"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M2 12L12 17L22 12"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
+                <img src="/coaching-beast-icon.svg" alt="Coaching Beast Icon" className="h-8 w-8" />
               </div>
-              <span className="text-xl font-bold text-white">CoachCraft</span>
+              <span className="text-xl font-bold text-white">Coaching Beast</span>
             </Link>
             <div className="hidden md:flex items-center gap-1">
               <ArrowLeft className="h-4 w-4 text-white/70" />
@@ -839,6 +823,17 @@ export default function BuildPage() {
             </div>
 
             <div className="flex items-center gap-2">
+              <Link href="/activities/new">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-white/20 bg-gray-200 hover:bg-gray-300 text-black"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  New Activity
+                </Button>
+              </Link>
+
               <Button
                 variant="outline"
                 size="sm"
@@ -884,20 +879,14 @@ export default function BuildPage() {
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="sport" className="text-white">
-                      Sport
+                      Sport or Activity
                     </Label>
-                    <Select value={selectedSport} onValueChange={setSelectedSport}>
-                      <SelectTrigger className="bg-white/10 border-white/20 text-white" id="sport">
-                        <SelectValue placeholder="Select a sport" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-gray-900 border-white/20 text-white">
-                        {sports.map((sport) => (
-                          <SelectItem key={sport.id} value={sport.id}>
-                            {sport.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <SportsActivitiesSelect
+                      value={selectedSport}
+                      onValueChange={setSelectedSport}
+                      placeholder="Select a sport or activity"
+                      availableSports={availableSports}
+                    />
                   </div>
 
                   <div className="space-y-2">
@@ -1051,12 +1040,13 @@ export default function BuildPage() {
                                       </div>
                                       <div className="flex items-center gap-1">
                                         <Button
-                                          variant="ghost"
+                                          variant="outline"
                                           size="sm"
-                                          className="h-7 px-2 hover:bg-white/20 text-white"
+                                          className="h-7 px-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-200 border border-blue-400/30 transition-colors"
                                           onClick={() => openDrillDetail(drill)}
                                         >
                                           <Info className="h-4 w-4" />
+                                          <span className="ml-1 text-xs">View Details</span>
                                         </Button>
                                         <Button
                                           variant="ghost"
@@ -1117,6 +1107,25 @@ export default function BuildPage() {
                   <CardDescription className="text-white/80">
                     Drag and drop to reorder drills in your plan
                   </CardDescription>
+                  {currentPlan.drills.length > 0 && (
+                    <div className="flex justify-end mt-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 text-xs text-white/70 hover:text-white hover:bg-white/10 border border-white/20"
+                        onClick={() => {
+                          setAllExpanded(!allExpanded);
+                          const newExpandedState = {};
+                          currentPlan.drills.forEach(drill => {
+                            newExpandedState[drill.id] = !allExpanded;
+                          });
+                          setExpandedDrills(newExpandedState);
+                        }}
+                      >
+                        {allExpanded ? "Collapse All" : "Expand All"}
+                      </Button>
+                    </div>
+                  )}
                 </CardHeader>
 
                 <CardContent>
@@ -1187,6 +1196,99 @@ export default function BuildPage() {
                                         <Badge className="ml-2 bg-gray-200 text-black text-xs">{index + 1}</Badge>
                                       </div>
                                       <p className="text-sm text-white/70 mt-1">{drill.description}</p>
+                                      {expandedDrills[drill.id] && (() => {
+                                        // Find the full drill details from the original drill
+                                        const fullDrill = findDrillById(drill.drillId);
+                                        return (
+                                          <div className="mt-3 p-3 bg-white/5 rounded-md border border-white/10">
+                                            <div className="grid grid-cols-2 gap-2 mb-3">
+                                              {fullDrill?.type && (
+                                                <div className="flex items-center gap-1">
+                                                  <span className="text-xs text-white/70">Type:</span>
+                                                  <span className="text-xs text-white/90">{fullDrill.type}</span>
+                                                </div>
+                                              )}
+                                              {fullDrill?.skillLevel && (
+                                                <div className="flex items-center gap-1">
+                                                  <span className="text-xs text-white/70">Level:</span>
+                                                  <span className="text-xs text-white/90">{fullDrill.skillLevel}</span>
+                                                </div>
+                                              )}
+                                              {fullDrill?.category && (
+                                                <div className="flex items-center gap-1">
+                                                  <span className="text-xs text-white/70">Category:</span>
+                                                  <span className="text-xs text-white/90">{fullDrill.category}</span>
+                                                </div>
+                                              )}
+                                              {fullDrill?.players && (
+                                                <div className="flex items-center gap-1">
+                                                  <span className="text-xs text-white/70">Players:</span>
+                                                  <span className="text-xs text-white/90">{fullDrill.players}</span>
+                                                </div>
+                                              )}
+                                            </div>
+                                            
+                                            {fullDrill?.equipment && fullDrill.equipment.length > 0 && (
+                                              <div className="mb-3">
+                                                <span className="text-xs text-white/70 mr-1">Equipment:</span>
+                                                <div className="flex flex-wrap gap-1 mt-1">
+                                                  {fullDrill.equipment.map((item, i) => (
+                                                    <Badge key={i} variant="outline" className="bg-white/5 text-white border-white/20 text-xs">
+                                                      {item}
+                                                    </Badge>
+                                                  ))}
+                                                </div>
+                                              </div>
+                                            )}
+                                            
+                                            {fullDrill?.objectives && fullDrill.objectives.length > 0 && (
+                                              <div className="mb-3">
+                                                <span className="text-xs text-white/70">Objectives:</span>
+                                                <ul className="list-disc pl-5 mt-1">
+                                                  {fullDrill.objectives.map((objective, i) => (
+                                                    <li key={i} className="text-xs text-white/90">{objective}</li>
+                                                  ))}
+                                                </ul>
+                                              </div>
+                                            )}
+                                            
+                                            {fullDrill?.setup && (
+                                              <div className="mb-3">
+                                                <span className="text-xs font-medium text-white/80">Setup:</span>
+                                                <p className="text-xs text-white/90 mt-1 whitespace-pre-line">{fullDrill.setup}</p>
+                                              </div>
+                                            )}
+                                            
+                                            {fullDrill?.instructions && (
+                                              <div className="mb-3">
+                                                <span className="text-xs font-medium text-white/80">Instructions:</span>
+                                                <p className="text-xs text-white/90 mt-1 whitespace-pre-line">{fullDrill.instructions}</p>
+                                              </div>
+                                            )}
+                                            
+                                            {fullDrill?.variations && (
+                                              <div className="mb-3">
+                                                <span className="text-xs font-medium text-white/80">Variations:</span>
+                                                <p className="text-xs text-white/90 mt-1 whitespace-pre-line">{fullDrill.variations}</p>
+                                              </div>
+                                            )}
+                                            
+                                            {fullDrill?.tips && (
+                                              <div className="mb-3">
+                                                <span className="text-xs font-medium text-white/80">Coaching Tips:</span>
+                                                <p className="text-xs text-white/90 mt-1 whitespace-pre-line">{fullDrill.tips}</p>
+                                              </div>
+                                            )}
+                                            
+                                            {drill.notes && (
+                                              <div className="mb-3">
+                                                <span className="text-xs font-medium text-white/80">Practice Notes:</span>
+                                                <p className="text-xs text-white/90 mt-1">{drill.notes}</p>
+                                              </div>
+                                            )}
+                                          </div>
+                                        );
+                                      })()}
                                       <div className="mt-2 flex items-center">
                                         <Label htmlFor={`duration-${drill.id}`} className="text-xs text-white/70 mr-2">
                                           Duration:
@@ -1229,6 +1331,20 @@ export default function BuildPage() {
                                       </div>
                                     </div>
                                     <div className="flex items-start gap-1">
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-7 px-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-200 border border-blue-400/30 transition-colors"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setExpandedDrills(prev => ({
+                                            ...prev,
+                                            [drill.id]: !prev[drill.id]
+                                          }));
+                                        }}
+                                      >
+                                        {expandedDrills[drill.id] ? "Collapse" : "View Details"}
+                                      </Button>
                                       <Button
                                         variant="ghost"
                                         size="icon"
@@ -1289,7 +1405,7 @@ export default function BuildPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowSaveDialog(false)} className="border-white/20 text-white">
+            <Button variant="outline" onClick={() => setShowSaveDialog(false)} className="border-white/20 text-white hover:bg-white/20">
               Cancel
             </Button>
             <Button onClick={() => savePlan(currentPlan.name)} className="bg-blue-600 hover:bg-blue-700 text-white">
@@ -1419,7 +1535,7 @@ export default function BuildPage() {
                         <div className="flex flex-wrap gap-2">
                           {selectedDrill.equipment && selectedDrill.equipment.length > 0 ? (
                             selectedDrill.equipment.map((item, index) => (
-                              <Badge key={index} variant="outline" className="bg-white/5">
+                              <Badge key={index} variant="outline" className="bg-white/5 text-white border-white/20">
                                 {item}
                               </Badge>
                             ))
@@ -1516,20 +1632,20 @@ export default function BuildPage() {
                 <div className="flex justify-between w-full">
                   <Button
                     variant="outline"
-                    className="border-white/20 text-white"
+                    className="border-white/20 text-white hover:bg-white/20 dark:text-white"
                     onClick={() => setShowDrillDetailDialog(false)}
                   >
                     Close
                   </Button>
                   <div className="flex gap-2">
                     {selectedDrill.isCustom && (
-                      <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                      <Button className="bg-blue-600 hover:bg-blue-700 text-white dark:text-white">
                         <Pencil className="h-4 w-4 mr-2" />
                         Edit Drill
                       </Button>
                     )}
                     <Button
-                      className="bg-green-600 hover:bg-green-700 text-white"
+                      className="bg-green-600 hover:bg-green-700 text-white dark:text-white"
                       onClick={() => {
                         addDrillToPlan(selectedDrill)
                         setShowDrillDetailDialog(false)
@@ -1573,7 +1689,7 @@ export default function BuildPage() {
                         id="drill-name"
                         value={newDrill.name}
                         onChange={(e) => setNewDrill({ ...newDrill, name: e.target.value })}
-                        className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
+                        className="bg-white/10 border-white/20 text-white placeholder:text-white/50 hover:bg-white/20"
                         placeholder="e.g., Triangle Passing Drill"
                       />
                     </div>
@@ -1660,7 +1776,7 @@ export default function BuildPage() {
                         id="drill-players"
                         value={newDrill.players}
                         onChange={(e) => setNewDrill({ ...newDrill, players: e.target.value })}
-                        className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
+                        className="bg-white/10 border-white/20 text-white placeholder:text-white/50 hover:bg-white/20"
                         placeholder="e.g., 6+, Any, 8-12"
                       />
                     </div>
@@ -1692,7 +1808,7 @@ export default function BuildPage() {
                             .filter(Boolean),
                         })
                       }
-                      className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
+                      className="bg-white/10 border-white/20 text-white placeholder:text-white/50 hover:bg-white/20"
                       placeholder="e.g., Balls, Cones, Goals"
                     />
                   </div>
@@ -1710,7 +1826,7 @@ export default function BuildPage() {
                             .filter(Boolean),
                         })
                       }
-                      className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
+                      className="bg-white/10 border-white/20 text-white placeholder:text-white/50 hover:bg-white/20"
                       placeholder="e.g., Improve passing, Enhance teamwork"
                     />
                   </div>
@@ -1779,7 +1895,7 @@ export default function BuildPage() {
                       id="drill-image"
                       value={newDrill.imageUrl || ""}
                       onChange={(e) => setNewDrill({ ...newDrill, imageUrl: e.target.value })}
-                      className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
+                      className="bg-white/10 border-white/20 text-white placeholder:text-white/50 hover:bg-white/20"
                       placeholder="URL to an image showing the drill setup"
                     />
                     <div className="text-xs text-white/50">
@@ -1795,7 +1911,7 @@ export default function BuildPage() {
                       id="drill-video"
                       value={newDrill.videoUrl || ""}
                       onChange={(e) => setNewDrill({ ...newDrill, videoUrl: e.target.value })}
-                      className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
+                      className="bg-white/10 border-white/20 text-white placeholder:text-white/50 hover:bg-white/20"
                       placeholder="YouTube or other video URL demonstrating the drill"
                     />
                     <div className="text-xs text-white/50">
@@ -1809,7 +1925,7 @@ export default function BuildPage() {
                         <Upload className="h-8 w-8 mx-auto text-white/50" />
                       </div>
                       <p className="text-white/70 mb-2">Drag and drop files here or click to upload</p>
-                      <Button variant="outline" className="border-white/20 text-white">
+                      <Button variant="outline" className="border-white/20 text-white hover:bg-white/20">
                         Upload Files
                       </Button>
                       <p className="text-xs text-white/50 mt-2">Supports JPG, PNG, GIF up to 5MB</p>
@@ -1824,7 +1940,7 @@ export default function BuildPage() {
             <Button
               variant="outline"
               onClick={() => setShowNewDrillDialog(false)}
-              className="border-white/20 text-white"
+              className="border-white/20 text-white hover:bg-white/20"
             >
               Cancel
             </Button>
