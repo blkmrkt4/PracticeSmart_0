@@ -36,17 +36,20 @@ const focusAreas = [
 
 export default function NewActivityPage() {
   const [activity, setActivity] = useState({
-    name: "",
-    sport: "",
-    focusArea: "",
+    title: "",
+    sport: "soccer", // Default sport
+    focus_area: "",
     description: "",
-    videoUrl: "",
-    imageUrl: "",
-    setupInstructions: "",
-    coachingPoints: "",
-    duration: "",
+    video_url: "",
+    image_url: "",
+    setup_instructions: "",
+    coaching_points: "",
+    duration: 15, // Default duration in minutes
     equipment: "",
-    participants: ""
+    participants: "",
+    user_id: "", // Will be set from session
+    skill_level: "all",
+    category: "drill"
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -58,39 +61,78 @@ export default function NewActivityPage() {
     setIsSubmitting(true)
     setError(null)
     
+    // Basic validation
+    if (!activity.title.trim()) {
+      setError('Please provide a title for the activity/drill')
+      setIsSubmitting(false)
+      return
+    }
+    
+    if (!activity.sport) {
+      setError('Please select a sport')
+      setIsSubmitting(false)
+      return
+    }
+    
+    if (!activity.description.trim()) {
+      setError('Please provide a description')
+      setIsSubmitting(false)
+      return
+    }
+    
     try {
+      // Prepare data for submission
+      const submissionData = {
+        ...activity,
+        // Convert equipment to array if it's a string
+        equipment: activity.equipment.includes(',') ? 
+          activity.equipment.split(',').map(item => item.trim()).filter(Boolean) : 
+          activity.equipment.trim() ? [activity.equipment.trim()] : [],
+        // Ensure duration is a number
+        duration: Number(activity.duration),
+        // Add timestamps
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+      
       const response = await fetch('/api/activities', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(activity),
+        body: JSON.stringify(submissionData),
       })
       
       const result = await response.json()
       
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to create activity')
+        throw new Error(result.error || 'Failed to create activity/drill')
       }
       
       setSuccess(true)
       // Reset form
       setActivity({
-        name: "",
-        sport: "",
-        focusArea: "",
+        title: "",
+        sport: activity.sport, // Keep the same sport
+        focus_area: "",
         description: "",
-        videoUrl: "",
-        imageUrl: "",
-        setupInstructions: "",
-        coachingPoints: "",
-        duration: "",
+        video_url: "",
+        image_url: "",
+        setup_instructions: "",
+        coaching_points: "",
+        duration: 15,
         equipment: "",
-        participants: ""
+        participants: "",
+        user_id: "",
+        skill_level: "all",
+        category: "drill"
       })
       
-      // Reset success message after 3 seconds
-      setTimeout(() => setSuccess(false), 3000)
+      // Reset success message after 3 seconds and redirect
+      setTimeout(() => {
+        setSuccess(false)
+        window.location.href = '/activities'
+      }, 3000)
     } catch (err) {
       console.error('Error creating activity:', err)
       setError(err instanceof Error ? err.message : 'An unknown error occurred')
@@ -122,7 +164,7 @@ export default function NewActivityPage() {
       {/* Main Content */}
       <main className="container px-4 py-8 md:px-6">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-3xl font-bold mb-8">Create New Activity</h1>
+          <h1 className="text-3xl font-bold mb-8">Create New Activity/Drill</h1>
 
           <form onSubmit={handleSubmit}>
             <Card className="bg-gray-900/50 border-white/10">
@@ -138,11 +180,12 @@ export default function NewActivityPage() {
                   <div className="space-y-2">
                     <Label htmlFor="name" className="text-white">Activity Name</Label>
                     <Input
-                      id="name"
-                      value={activity.name}
-                      onChange={(e) => setActivity({ ...activity, name: e.target.value })}
+                      id="title"
+                      value={activity.title}
+                      onChange={(e) => setActivity({ ...activity, title: e.target.value })}
                       className="bg-white/10 border-white/20 text-white"
                       placeholder="e.g., Advanced Passing Drill"
+                      required
                     />
                   </div>
                   <div className="space-y-2">
@@ -150,8 +193,8 @@ export default function NewActivityPage() {
                     <Input
                       id="duration"
                       type="number"
-                      value={activity.duration}
-                      onChange={(e) => setActivity({ ...activity, duration: e.target.value })}
+                      value={activity.duration || ''}
+                      onChange={(e) => setActivity({ ...activity, duration: parseInt(e.target.value) || 0 })}
                       className="bg-white/10 border-white/20 text-white"
                       placeholder="15"
                     />
@@ -171,8 +214,9 @@ export default function NewActivityPage() {
                   <div className="space-y-2">
                     <Label htmlFor="focusArea" className="text-white">Focus Area</Label>
                     <Select
-                      value={activity.focusArea}
-                      onValueChange={(value) => setActivity({ ...activity, focusArea: value })}
+                      value={activity.focus_area}
+                      onValueChange={(value) => setActivity({ ...activity, focus_area: value })}
+                      required
                     >
                       <SelectTrigger className="bg-white/10 border-white/20 text-white">
                         <SelectValue placeholder="Select focus area" />
@@ -183,6 +227,45 @@ export default function NewActivityPage() {
                             {area}
                           </SelectItem>
                         ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Skill Level and Category */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="skillLevel" className="text-white">Skill Level</Label>
+                    <Select
+                      value={activity.skill_level}
+                      onValueChange={(value) => setActivity({ ...activity, skill_level: value })}
+                    >
+                      <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                        <SelectValue placeholder="Select skill level" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="beginner">Beginner</SelectItem>
+                        <SelectItem value="intermediate">Intermediate</SelectItem>
+                        <SelectItem value="advanced">Advanced</SelectItem>
+                        <SelectItem value="all">All Levels</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="category" className="text-white">Category</Label>
+                    <Select
+                      value={activity.category}
+                      onValueChange={(value) => setActivity({ ...activity, category: value })}
+                    >
+                      <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="warmup">Warm-up</SelectItem>
+                        <SelectItem value="drill">Drill</SelectItem>
+                        <SelectItem value="game">Game</SelectItem>
+                        <SelectItem value="fitness">Fitness</SelectItem>
+                        <SelectItem value="tactical">Tactical</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -206,8 +289,8 @@ export default function NewActivityPage() {
                     <Label htmlFor="videoUrl" className="text-white">Video URL</Label>
                     <Input
                       id="videoUrl"
-                      value={activity.videoUrl}
-                      onChange={(e) => setActivity({ ...activity, videoUrl: e.target.value })}
+                      value={activity.video_url}
+                      onChange={(e) => setActivity({ ...activity, video_url: e.target.value })}
                       className="bg-white/10 border-white/20 text-white"
                       placeholder="e.g., YouTube or Vimeo URL"
                     />
@@ -239,8 +322,8 @@ export default function NewActivityPage() {
                     <Label htmlFor="setup" className="text-white">Setup Instructions</Label>
                     <Textarea
                       id="setup"
-                      value={activity.setupInstructions}
-                      onChange={(e) => setActivity({ ...activity, setupInstructions: e.target.value })}
+                      value={activity.setup_instructions}
+                      onChange={(e) => setActivity({ ...activity, setup_instructions: e.target.value })}
                       className="bg-white/10 border-white/20 text-white"
                       placeholder="Describe how to set up the activity..."
                     />
@@ -250,8 +333,8 @@ export default function NewActivityPage() {
                     <Label htmlFor="coachingPoints" className="text-white">Coaching Points</Label>
                     <Textarea
                       id="coachingPoints"
-                      value={activity.coachingPoints}
-                      onChange={(e) => setActivity({ ...activity, coachingPoints: e.target.value })}
+                      value={activity.coaching_points}
+                      onChange={(e) => setActivity({ ...activity, coaching_points: e.target.value })}
                       className="bg-white/10 border-white/20 text-white"
                       placeholder="Key points for coaches to focus on..."
                     />
@@ -290,7 +373,7 @@ export default function NewActivityPage() {
                   Cancel
                 </Button>
                 <Button type="submit" className="bg-blue-600 text-white hover:bg-blue-700">
-                  {isSubmitting ? 'Creating...' : 'Create Activity'}
+                  {isSubmitting ? 'Creating...' : 'Create Activity/Drill'}
                 </Button>
               </CardFooter>
             </Card>

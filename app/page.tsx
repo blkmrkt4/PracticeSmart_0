@@ -30,7 +30,7 @@ export default function LandingPage() {
               Create a Plan
             </Link>
             <Link href="/activities/new" className="text-sm font-medium text-white/70 transition-colors hover:text-white">
-              New Activity
+              New Activity/Drill
             </Link>
             <Link
               href="/build?view=saved"
@@ -92,7 +92,7 @@ export default function LandingPage() {
                 <Link href="/build">
                   <Button className="bg-white text-black hover:bg-white/90 h-12 px-6">Start Building Plans</Button>
                 </Link>
-                <Button variant="outline" className="border-white/20 h-12 px-6 hover:bg-white/10 text-black">
+                <Button variant="outline" className="border-white/20 h-12 px-6 hover:bg-white/10 text-white">
                   Watch Demo
                 </Button>
               </div>
@@ -459,7 +459,7 @@ export default function LandingPage() {
                 },
                 {
                   icon: <PenLine className="h-6 w-6" />,
-                  title: "Create New Activity",
+                  title: "Create New Activity/Drill",
                   description: "Design custom activities tailored to your team's specific needs",
                 },
                 {
@@ -798,7 +798,7 @@ export default function LandingPage() {
                 <Link href="/build">
                   <Button className="bg-white text-black hover:bg-white/90 h-12 px-6">Start Free Trial</Button>
                 </Link>
-                <Button variant="outline" className="border-white/20 h-12 px-6 hover:bg-white/10 text-black">
+                <Button variant="outline" className="border-white/20 h-12 px-6 hover:bg-white/10 text-white">
                   Schedule Demo
                 </Button>
               </div>

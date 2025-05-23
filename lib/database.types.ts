@@ -14,43 +14,70 @@ export interface Database {
           id: string
           created_at: string
           title: string
-          category: string
-          skill_level: string
-          type: string
-          players: number
+          sport: string
+          focus_area: string
+          description: string
+          video_url: string
+          image_url: string
+          setup_instructions: string
+          coaching_points: string
+          duration: number
           equipment: string[]
-          objectives: string
-          setup: string
-          instructions: string
+          participants: string
           user_id: string
+          skill_level: 'All Levels' | 'Beginner' | 'Intermediate' | 'Advanced'
+          category: string
+          type: 'Drills' | 'Scrimmage' | 'Conditioning' | 'Stretching' | 'Instructions' | 'Weights' | 'Plyometrics' | 'Hand-Eye' | 'Footwork' | 'Cooldown' | 'Meditation'
+          objectives: string[]
+          variations: string | null
+          tips: string | null
+          is_custom: boolean
         }
         Insert: {
           id?: string
           created_at?: string
           title: string
-          category: string
-          skill_level: string
-          type: string
-          players: number
+          sport: string
+          focus_area: string
+          description: string
+          video_url: string
+          image_url: string
+          setup_instructions: string
+          coaching_points: string
+          duration: number
           equipment: string[]
-          objectives: string
-          setup: string
-          instructions: string
+          participants: string
           user_id: string
+          skill_level?: 'all' | 'beginner' | 'intermediate' | 'advanced'
+          category?: string
+          type?: 'Drills' | 'Scrimmage' | 'Conditioning' | 'Stretching' | 'Instructions' | 'Weights' | 'Plyometrics' | 'Hand-Eye' | 'Footwork' | 'Cooldown' | 'Meditation'
+          objectives?: string[]
+          variations?: string
+          tips?: string
+          is_custom?: boolean
         }
         Update: {
           id?: string
           created_at?: string
           title?: string
-          category?: string
-          skill_level?: string
-          type?: string
-          players?: number
+          sport?: string
+          focus_area?: string
+          description?: string
+          video_url?: string
+          image_url?: string
+          setup_instructions?: string
+          coaching_points?: string
+          duration?: number
           equipment?: string[]
-          objectives?: string
-          setup?: string
-          instructions?: string
+          participants?: string
           user_id?: string
+          skill_level?: 'all' | 'beginner' | 'intermediate' | 'advanced'
+          category?: string
+          type?: 'Drills' | 'Scrimmage' | 'Conditioning' | 'Stretching' | 'Instructions' | 'Weights' | 'Plyometrics' | 'Hand-Eye' | 'Footwork' | 'Cooldown' | 'Meditation'
+          objectives?: string[]
+          variations?: string
+          tips?: string
+          is_custom?: boolean
         }
       }
       training_plans: {
@@ -60,6 +87,8 @@ export interface Database {
           title: string
           description: string
           user_id: string
+          sport: string
+          duration: number
         }
         Insert: {
           id?: string
@@ -67,6 +96,8 @@ export interface Database {
           title: string
           description: string
           user_id: string
+          sport: string
+          duration: number
         }
         Update: {
           id?: string
@@ -74,6 +105,8 @@ export interface Database {
           title?: string
           description?: string
           user_id?: string
+          sport?: string
+          duration?: number
         }
       }
       training_plan_items: {

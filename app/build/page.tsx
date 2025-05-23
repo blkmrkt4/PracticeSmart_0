@@ -3,6 +3,7 @@
 import { DialogFooter } from "@/components/ui/dialog"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd"
@@ -110,7 +111,7 @@ const sampleDrills: Drill[] = [
     skillLevel: "Intermediate",
     players: "9+",
     equipment: ["Balls", "Cones"],
-    sport: "soccer",
+    sport: "soccer-football",
     objectives: ["Improve passing accuracy", "Develop movement off the ball"],
     type: "Drills",
     setup:
@@ -131,7 +132,7 @@ const sampleDrills: Drill[] = [
     skillLevel: "All Levels",
     players: "6+",
     equipment: ["Balls", "Goals"],
-    sport: "soccer",
+    sport: "soccer-football",
     objectives: ["Improve shooting accuracy", "Practice different shooting techniques"],
     type: "Drills",
     setup:
@@ -153,7 +154,7 @@ const sampleDrills: Drill[] = [
     skillLevel: "Intermediate",
     players: "8+",
     equipment: ["Balls", "Cones"],
-    sport: "soccer",
+    sport: "soccer-football",
     objectives: ["Improve defensive positioning", "Practice tackling technique"],
     type: "Drills",
   },
@@ -166,7 +167,7 @@ const sampleDrills: Drill[] = [
     skillLevel: "All Levels",
     players: "8+",
     equipment: ["Balls", "Cones", "Pinnies"],
-    sport: "soccer",
+    sport: "soccer-football",
     objectives: ["Apply skills in game-like situations", "Improve decision making"],
     type: "Scrimmage",
   },
@@ -179,7 +180,7 @@ const sampleDrills: Drill[] = [
     skillLevel: "Beginner",
     players: "6+",
     equipment: ["Balls", "Cones"],
-    sport: "soccer",
+    sport: "soccer-football",
     objectives: ["Improve dribbling control", "Add competitive element"],
     type: "Drills",
   },
@@ -192,7 +193,7 @@ const sampleDrills: Drill[] = [
     skillLevel: "Advanced",
     players: "10+",
     equipment: ["Balls", "Pinnies"],
-    sport: "soccer",
+    sport: "soccer-football",
     objectives: ["Improve possession under pressure", "Quick decision making"],
     type: "Drills",
   },
@@ -205,7 +206,7 @@ const sampleDrills: Drill[] = [
     skillLevel: "All Levels",
     players: "Any",
     equipment: [],
-    sport: "soccer",
+    sport: "soccer-football",
     objectives: ["Prepare body for activity", "Prevent injuries"],
     type: "Stretching",
   },
@@ -218,7 +219,7 @@ const sampleDrills: Drill[] = [
     skillLevel: "All Levels",
     players: "Any",
     equipment: [],
-    sport: "soccer",
+    sport: "soccer-football",
     objectives: ["Gradually reduce heart rate", "Improve flexibility"],
     type: "Cooldown",
   },
@@ -231,7 +232,7 @@ const sampleDrills: Drill[] = [
     skillLevel: "Intermediate",
     players: "8+",
     equipment: ["Balls", "Cones"],
-    sport: "soccer",
+    sport: "soccer-football",
     objectives: ["Improve passing accuracy", "Practice movement patterns"],
     type: "Drills",
   },
@@ -244,7 +245,7 @@ const sampleDrills: Drill[] = [
     skillLevel: "Intermediate",
     players: "8+",
     equipment: ["Balls", "Goals", "Cones"],
-    sport: "soccer",
+    sport: "soccer-football",
     objectives: ["Improve crossing accuracy", "Practice finishing from crosses"],
     type: "Drills",
   },
@@ -257,7 +258,7 @@ const sampleDrills: Drill[] = [
     skillLevel: "Intermediate",
     players: "10+",
     equipment: ["Balls", "Cones", "Pinnies"],
-    sport: "soccer",
+    sport: "soccer-football",
     objectives: ["Improve team defensive organization", "Practice shifting and covering"],
     type: "Drills",
   },
@@ -270,7 +271,7 @@ const sampleDrills: Drill[] = [
     skillLevel: "All Levels",
     players: "2+",
     equipment: ["Balls", "Goals"],
-    sport: "soccer",
+    sport: "soccer-football",
     objectives: ["Improve distribution accuracy", "Practice decision making"],
     type: "Drills",
   },
@@ -283,7 +284,7 @@ const sampleDrills: Drill[] = [
     skillLevel: "All Levels",
     players: "Any",
     equipment: ["Cones", "Timer"],
-    sport: "soccer",
+    sport: "soccer-football",
     objectives: ["Improve cardiovascular fitness", "Enhance endurance"],
     type: "Conditioning",
   },
@@ -296,7 +297,7 @@ const sampleDrills: Drill[] = [
     skillLevel: "All Levels",
     players: "All",
     equipment: ["Whiteboard", "Markers"],
-    sport: "soccer",
+    sport: "soccer-football",
     objectives: ["Improve tactical understanding", "Clarify player roles"],
     type: "Instructions",
   },
@@ -309,7 +310,7 @@ const sampleDrills: Drill[] = [
     skillLevel: "Intermediate",
     players: "Any",
     equipment: ["Weights", "Resistance Bands"],
-    sport: "soccer",
+    sport: "soccer-football",
     objectives: ["Build leg strength", "Improve stability"],
     type: "Weights",
   },
@@ -322,7 +323,7 @@ const sampleDrills: Drill[] = [
     skillLevel: "Intermediate",
     players: "Any",
     equipment: ["Plyo Boxes", "Agility Ladder"],
-    sport: "soccer",
+    sport: "soccer-football",
     objectives: ["Improve explosive power", "Enhance footwork"],
     type: "Plyometrics",
   },
@@ -335,7 +336,7 @@ const sampleDrills: Drill[] = [
     skillLevel: "All Levels",
     players: "Any",
     equipment: ["Balls", "Cones"],
-    sport: "soccer",
+    sport: "soccer-football",
     objectives: ["Improve ball control", "Enhance coordination"],
     type: "Hand-Eye",
   },
@@ -348,7 +349,7 @@ const sampleDrills: Drill[] = [
     skillLevel: "All Levels",
     players: "Any",
     equipment: ["Speed Ladder"],
-    sport: "soccer",
+    sport: "soccer-football",
     objectives: ["Improve foot speed", "Enhance coordination"],
     type: "Footwork",
   },
@@ -361,7 +362,7 @@ const sampleDrills: Drill[] = [
     skillLevel: "All Levels",
     players: "Any",
     equipment: [],
-    sport: "soccer",
+    sport: "soccer-football",
     objectives: ["Improve mental focus", "Reduce performance anxiety"],
     type: "Meditation",
   },
@@ -371,7 +372,7 @@ const sampleSavedPlans: PracticePlan[] = [
   {
     id: "plan-1",
     name: "Standard Training Session",
-    sport: "soccer",
+    sport: "soccer-football",
     duration: 90,
     drills: [
       {
@@ -423,7 +424,7 @@ const sampleSavedPlans: PracticePlan[] = [
   {
     id: "plan-2",
     name: "Defensive Focus Session",
-    sport: "soccer",
+    sport: "soccer-football",
     duration: 85,
     drills: [
       {
@@ -488,31 +489,20 @@ const categories = [
   "Cool Down",
 ]
 
-// Sports options
-const sports = [
-  { id: "soccer", name: "Soccer" },
-  { id: "basketball", name: "Basketball" },
-  { id: "football", name: "Football" },
-  { id: "volleyball", name: "Volleyball" },
-  { id: "hockey", name: "Hockey" },
-  { id: "lacrosse", name: "Lacrosse" },
-  { id: "rugby", name: "Rugby" },
-  { id: "cricket", name: "Cricket" },
-]
-
 export default function BuildPage() {
   // State
-  const [selectedSport, setSelectedSport] = useState("soccer")
+  const [selectedSport, setSelectedSport] = useState("soccer-football")
   const [practiceDuration, setPracticeDuration] = useState(90)
   const [selectedCategory, setSelectedCategory] = useState("All")
   const [selectedType, setSelectedType] = useState("All Types")
   const [searchQuery, setSearchQuery] = useState("")
   const [expandedDrills, setExpandedDrills] = useState<Record<string, boolean>>({})
   const [allExpanded, setAllExpanded] = useState(false)
+  const [isClient, setIsClient] = useState(false) // For client-side rendering
   const [currentPlan, setCurrentPlan] = useState<PracticePlan>({
-    id: `plan-${Date.now()}`,
+    id: `plan-${Math.random().toString(36).substring(2, 11)}`,
     name: "New Training Plan",
-    sport: "soccer",
+    sport: "soccer-football",
     duration: 90,
     drills: [],
     createdAt: new Date().toISOString(),
@@ -522,6 +512,24 @@ export default function BuildPage() {
   const [isEditingName, setIsEditingName] = useState(false)
   const [showSavedPlans, setShowSavedPlans] = useState(false)
   const [showSaveDialog, setShowSaveDialog] = useState(false)
+
+  // Handle client-side rendering for export link to prevent hydration errors
+  useEffect(() => {
+    setIsClient(true)
+    
+    // Replace the export link placeholder with the actual link
+    const container = document.getElementById('export-link-container')
+    if (container) {
+      container.innerHTML = `
+        <a href="/export?id=${currentPlan.id}">
+          <button class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-white text-black hover:bg-white/90 font-medium h-9 px-3">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 mr-2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><path d="M16 13H8"></path><path d="M16 17H8"></path><polyline points="10 9 9 9 8 9"></polyline></svg>
+            Export Plan
+          </button>
+        </a>
+      `
+    }
+  }, [currentPlan.id])
   const [customDrills, setCustomDrills] = useState<Drill[]>([])
   const [showNewDrillDialog, setShowNewDrillDialog] = useState(false)
   const [showDrillDetailDialog, setShowDrillDetailDialog] = useState(false)
@@ -733,8 +741,10 @@ export default function BuildPage() {
       return
     }
 
+    // Generate a stable ID using a counter - this avoids hydration errors
+    // since it will only run on the client side after the form is submitted
     const customDrill: Drill = {
-      id: `custom-drill-${Date.now()}`,
+      id: `custom-drill-${customDrills.length + 1}-${newDrill.name.toLowerCase().replace(/\s+/g, '-')}`,
       name: newDrill.name || "",
       description: newDrill.description || "",
       duration: newDrill.duration || 15,
@@ -830,7 +840,7 @@ export default function BuildPage() {
                   className="border-white/20 bg-gray-200 hover:bg-gray-300 text-black"
                 >
                   <Plus className="h-4 w-4 mr-2" />
-                  New Activity
+                  New Activity/Drill
                 </Button>
               </Link>
 
@@ -854,12 +864,14 @@ export default function BuildPage() {
                 Save
               </Button>
 
-              <Link href={`/export?id=${currentPlan.id}`}>
-                <Button size="sm" className="bg-white text-black hover:bg-white/90 font-medium">
+              {/* Export link - client-side only to prevent hydration errors */}
+              <div id="export-link-container">
+                {/* Will be replaced with actual link on client side */}
+                <Button size="sm" className="bg-white text-black hover:bg-white/90 font-medium opacity-70" disabled>
                   <FileText className="h-4 w-4 mr-2" />
                   Export Plan
                 </Button>
-              </Link>
+              </div>
             </div>
           </div>
         </div>
@@ -885,7 +897,6 @@ export default function BuildPage() {
                       value={selectedSport}
                       onValueChange={setSelectedSport}
                       placeholder="Select a sport or activity"
-                      availableSports={availableSports}
                     />
                   </div>
 
@@ -927,7 +938,7 @@ export default function BuildPage() {
                       className="bg-blue-600 hover:bg-blue-700 text-white"
                     >
                       <Plus className="h-4 w-4 mr-1" />
-                      Create Drill
+                      Create Activity/Drill
                     </Button>
                   </div>
                 </CardHeader>
@@ -1666,287 +1677,236 @@ export default function BuildPage() {
       <Dialog open={showNewDrillDialog} onOpenChange={setShowNewDrillDialog}>
         <DialogContent className="bg-gray-900 border-white/20 text-white max-w-4xl max-h-[90vh] overflow-hidden">
           <DialogHeader>
-            <DialogTitle>Create New Drill</DialogTitle>
-            <DialogDescription className="text-white/80">Add a custom drill to your personal library</DialogDescription>
+            <DialogTitle>Create New Activity/Drill</DialogTitle>
+            <DialogDescription className="text-white/80">Add a custom activity or drill to your personal library</DialogDescription>
           </DialogHeader>
 
           <ScrollArea className="max-h-[calc(90vh-180px)]">
             <div className="py-4 space-y-6">
-              <Tabs defaultValue="basic">
-                <TabsList className="bg-gray-800 border-white/10">
-                  <TabsTrigger value="basic">Basic Info</TabsTrigger>
-                  <TabsTrigger value="details">Details</TabsTrigger>
-                  <TabsTrigger value="media">Media</TabsTrigger>
-                </TabsList>
+              {/* Basic Information */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="activity-name" className="text-white">Activity Name</Label>
+                  <Input
+                    id="activity-name"
+                    value={newDrill.name}
+                    onChange={(e) => setNewDrill({ ...newDrill, name: e.target.value })}
+                    className="bg-white/10 border-white/20 text-white"
+                    placeholder="e.g., Advanced Passing Drill"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="activity-duration" className="text-white">Duration (minutes)</Label>
+                  <Input
+                    id="activity-duration"
+                    type="number"
+                    value={newDrill.duration}
+                    onChange={(e) => setNewDrill({ ...newDrill, duration: Number(e.target.value) })}
+                    className="bg-white/10 border-white/20 text-white"
+                    placeholder="15"
+                  />
+                </div>
+              </div>
 
-                <TabsContent value="basic" className="space-y-4 mt-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="drill-name" className="text-white">
-                        Drill Name*
-                      </Label>
-                      <Input
-                        id="drill-name"
-                        value={newDrill.name}
-                        onChange={(e) => setNewDrill({ ...newDrill, name: e.target.value })}
-                        className="bg-white/10 border-white/20 text-white placeholder:text-white/50 hover:bg-white/20"
-                        placeholder="e.g., Triangle Passing Drill"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="drill-duration" className="text-white">
-                        Duration (minutes)*
-                      </Label>
-                      <Input
-                        id="drill-duration"
-                        type="number"
-                        value={newDrill.duration}
-                        onChange={(e) => setNewDrill({ ...newDrill, duration: Number(e.target.value) })}
-                        className="bg-white/10 border-white/20 text-white"
-                        min={5}
-                        max={60}
-                        step={5}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="drill-category" className="text-white">
-                        Category
-                      </Label>
-                      <Select
-                        value={newDrill.category}
-                        onChange={(value) => setNewDrill({ ...newDrill, category: value })}
-                      >
-                        <SelectTrigger id="drill-category" className="bg-white/10 border-white/20 text-white">
-                          <SelectValue placeholder="Select category" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-gray-900 border-white/20 text-white">
-                          {categories
-                            .filter((c) => c !== "All")
-                            .map((category) => (
-                              <SelectItem key={category} value={category}>
-                                {category}
-                              </SelectItem>
-                            ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="drill-type" className="text-white">
-                        Drill Type
-                      </Label>
-                      <Select value={newDrill.type} onChange={(value) => setNewDrill({ ...newDrill, type: value })}>
-                        <SelectTrigger id="drill-type" className="bg-white/10 border-white/20 text-white">
-                          <SelectValue placeholder="Select type" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-gray-900 border-white/20 text-white">
-                          {drillTypes
-                            .filter((t) => t !== "All Types")
-                            .map((type) => (
-                              <SelectItem key={type} value={type}>
-                                {type}
-                              </SelectItem>
-                            ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="drill-skill" className="text-white">
-                        Skill Level
-                      </Label>
-                      <Select
-                        value={newDrill.skillLevel}
-                        onChange={(value) => setNewDrill({ ...newDrill, skillLevel: value })}
-                      >
-                        <SelectTrigger id="drill-skill" className="bg-white/10 border-white/20 text-white">
-                          <SelectValue placeholder="Select skill level" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-gray-900 border-white/20 text-white">
-                          <SelectItem value="Beginner">Beginner</SelectItem>
-                          <SelectItem value="Intermediate">Intermediate</SelectItem>
-                          <SelectItem value="Advanced">Advanced</SelectItem>
-                          <SelectItem value="All Levels">All Levels</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="drill-players" className="text-white">
-                        Players
-                      </Label>
-                      <Input
-                        id="drill-players"
-                        value={newDrill.players}
-                        onChange={(e) => setNewDrill({ ...newDrill, players: e.target.value })}
-                        className="bg-white/10 border-white/20 text-white placeholder:text-white/50 hover:bg-white/20"
-                        placeholder="e.g., 6+, Any, 8-12"
-                      />
-                    </div>
-                  </div>
+              {/* Sport and Focus Area */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="activity-sport" className="text-white">Sport or Activity</Label>
+                  <SportsActivitiesSelect
+                    value={newDrill.sport || ""}
+                    onValueChange={(value) => setNewDrill({ ...newDrill, sport: value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="activity-focus" className="text-white">Focus Area</Label>
+                  <Select
+                    value={newDrill.category}
+                    onValueChange={(value) => setNewDrill({ ...newDrill, category: value })}
+                  >
+                    <SelectTrigger id="activity-focus" className="bg-white/10 border-white/20 text-white">
+                      <SelectValue placeholder="Select focus area" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-900 border-white/20 text-white">
+                      {categories
+                        .filter((c) => c !== "All")
+                        .map((category) => (
+                          <SelectItem key={category} value={category.toLowerCase()}>
+                            {category}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="drill-description" className="text-white">
-                      Description*
-                    </Label>
-                    <textarea
-                      id="drill-description"
-                      value={newDrill.description}
-                      onChange={(e) => setNewDrill({ ...newDrill, description: e.target.value })}
-                      className="w-full h-20 bg-white/10 border-white/20 text-white rounded-md p-2 placeholder:text-white/50"
-                      placeholder="Describe the drill and how it works..."
-                    />
-                  </div>
+              {/* Skill Level and Category */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="activity-skill" className="text-white">Skill Level</Label>
+                  <Select
+                    value={newDrill.skillLevel}
+                    onValueChange={(value) => setNewDrill({ ...newDrill, skillLevel: value })}
+                  >
+                    <SelectTrigger id="activity-skill" className="bg-white/10 border-white/20 text-white">
+                      <SelectValue placeholder="Select skill level" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-900 border-white/20 text-white">
+                      <SelectItem value="beginner">Beginner</SelectItem>
+                      <SelectItem value="intermediate">Intermediate</SelectItem>
+                      <SelectItem value="advanced">Advanced</SelectItem>
+                      <SelectItem value="all">All Levels</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="activity-type" className="text-white">Category</Label>
+                  <Select
+                    value={newDrill.type}
+                    onValueChange={(value) => setNewDrill({ ...newDrill, type: value })}
+                  >
+                    <SelectTrigger id="activity-type" className="bg-white/10 border-white/20 text-white">
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-900 border-white/20 text-white">
+                      {drillTypes
+                        .filter((t) => t !== "All Types")
+                        .map((type) => (
+                          <SelectItem key={type} value={type.toLowerCase()}>
+                            {type}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
 
-                  <div className="space-y-2">
-                    <Label className="text-white">Equipment (comma separated)</Label>
-                    <Input
-                      value={newDrill.equipment?.join(", ") || ""}
-                      onChange={(e) =>
-                        setNewDrill({
-                          ...newDrill,
-                          equipment: e.target.value
-                            .split(",")
-                            .map((item) => item.trim())
-                            .filter(Boolean),
-                        })
-                      }
-                      className="bg-white/10 border-white/20 text-white placeholder:text-white/50 hover:bg-white/20"
-                      placeholder="e.g., Balls, Cones, Goals"
-                    />
-                  </div>
+              {/* Description */}
+              <div className="space-y-2">
+                <Label htmlFor="activity-description" className="text-white">Description</Label>
+                <textarea
+                  id="activity-description"
+                  value={newDrill.description}
+                  onChange={(e) => setNewDrill({ ...newDrill, description: e.target.value })}
+                  className="w-full h-32 bg-white/10 border-white/20 text-white rounded-md p-2 placeholder:text-white/50"
+                  placeholder="Describe the activity and its objectives..."
+                />
+              </div>
 
-                  <div className="space-y-2">
-                    <Label className="text-white">Objectives (comma separated)</Label>
-                    <Input
-                      value={newDrill.objectives?.join(", ") || ""}
-                      onChange={(e) =>
-                        setNewDrill({
-                          ...newDrill,
-                          objectives: e.target.value
-                            .split(",")
-                            .map((item) => item.trim())
-                            .filter(Boolean),
-                        })
-                      }
-                      className="bg-white/10 border-white/20 text-white placeholder:text-white/50 hover:bg-white/20"
-                      placeholder="e.g., Improve passing, Enhance teamwork"
-                    />
-                  </div>
-                </TabsContent>
+              {/* Video URL */}
+              <div className="space-y-2">
+                <Label htmlFor="activity-video" className="text-white">Video URL</Label>
+                <Input
+                  id="activity-video"
+                  value={newDrill.videoUrl || ""}
+                  onChange={(e) => setNewDrill({ ...newDrill, videoUrl: e.target.value })}
+                  className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
+                  placeholder="e.g., YouTube or Vimeo URL"
+                />
+              </div>
 
-                <TabsContent value="details" className="space-y-4 mt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="drill-setup" className="text-white">
-                      Setup Instructions
-                    </Label>
-                    <textarea
-                      id="drill-setup"
-                      value={newDrill.setup || ""}
-                      onChange={(e) => setNewDrill({ ...newDrill, setup: e.target.value })}
-                      className="w-full h-24 bg-white/10 border-white/20 text-white rounded-md p-2 placeholder:text-white/50"
-                      placeholder="Describe how to set up the drill (cones, players, etc.)"
-                    />
+              {/* Illustration or Court Diagram */}
+              <div className="space-y-2">
+                <Label className="text-white">Illustration or Court Diagram</Label>
+                <div
+                  className="border-2 border-dashed border-white/20 rounded-md p-8 text-center hover:bg-white/5 transition-colors cursor-pointer"
+                >
+                  <div className="flex flex-col items-center justify-center gap-2">
+                    <Upload className="h-8 w-8 text-white/50" />
+                    <p className="text-white/70">Drag and drop an image, or click to select</p>
                   </div>
+                </div>
+              </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="drill-instructions" className="text-white">
-                      Drill Instructions
-                    </Label>
-                    <textarea
-                      id="drill-instructions"
-                      value={newDrill.instructions || ""}
-                      onChange={(e) => setNewDrill({ ...newDrill, instructions: e.target.value })}
-                      className="w-full h-32 bg-white/10 border-white/20 text-white rounded-md p-2 placeholder:text-white/50"
-                      placeholder="Step-by-step instructions for running the drill"
-                    />
-                  </div>
+              {/* Additional fields */}
+              <div className="space-y-2">
+                <Label htmlFor="activity-players" className="text-white">Players</Label>
+                <Input
+                  id="activity-players"
+                  value={newDrill.players}
+                  onChange={(e) => setNewDrill({ ...newDrill, players: e.target.value })}
+                  className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
+                  placeholder="e.g., 6+, Any, 8-12"
+                />
+              </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="drill-variations" className="text-white">
-                      Variations
-                    </Label>
-                    <textarea
-                      id="drill-variations"
-                      value={newDrill.variations || ""}
-                      onChange={(e) => setNewDrill({ ...newDrill, variations: e.target.value })}
-                      className="w-full h-24 bg-white/10 border-white/20 text-white rounded-md p-2 placeholder:text-white/50"
-                      placeholder="Different ways to modify the drill for various skill levels"
-                    />
-                  </div>
+              <div className="space-y-2">
+                <Label className="text-white">Equipment (comma separated)</Label>
+                <Input
+                  value={newDrill.equipment?.join(", ") || ""}
+                  onChange={(e) =>
+                    setNewDrill({
+                      ...newDrill,
+                      equipment: e.target.value
+                        .split(",")
+                        .map((item) => item.trim())
+                        .filter(Boolean),
+                    })
+                  }
+                  className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
+                  placeholder="e.g., Balls, Cones, Goals"
+                />
+              </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="drill-tips" className="text-white">
-                      Coaching Tips
-                    </Label>
-                    <textarea
-                      id="drill-tips"
-                      value={newDrill.tips || ""}
-                      onChange={(e) => setNewDrill({ ...newDrill, tips: e.target.value })}
-                      className="w-full h-24 bg-white/10 border-white/20 text-white rounded-md p-2 placeholder:text-white/50"
-                      placeholder="Tips for coaches to help players succeed with this drill"
-                    />
-                  </div>
-                </TabsContent>
+              <div className="space-y-2">
+                <Label className="text-white">Objectives (comma separated)</Label>
+                <Input
+                  value={newDrill.objectives?.join(", ") || ""}
+                  onChange={(e) =>
+                    setNewDrill({
+                      ...newDrill,
+                      objectives: e.target.value
+                        .split(",")
+                        .map((item) => item.trim())
+                        .filter(Boolean),
+                    })
+                  }
+                  className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
+                  placeholder="e.g., Improve passing, Enhance teamwork"
+                />
+              </div>
 
-                <TabsContent value="media" className="space-y-4 mt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="drill-image" className="text-white">
-                      Diagram or Image URL
-                    </Label>
-                    <Input
-                      id="drill-image"
-                      value={newDrill.imageUrl || ""}
-                      onChange={(e) => setNewDrill({ ...newDrill, imageUrl: e.target.value })}
-                      className="bg-white/10 border-white/20 text-white placeholder:text-white/50 hover:bg-white/20"
-                      placeholder="URL to an image showing the drill setup"
-                    />
-                    <div className="text-xs text-white/50">
-                      Add a URL to an image that shows the drill setup or movement patterns
-                    </div>
-                  </div>
+              <div className="space-y-2">
+                <Label htmlFor="activity-setup" className="text-white">Setup Instructions</Label>
+                <textarea
+                  id="activity-setup"
+                  value={newDrill.setup || ""}
+                  onChange={(e) => setNewDrill({ ...newDrill, setup: e.target.value })}
+                  className="w-full h-20 bg-white/10 border-white/20 text-white rounded-md p-2 placeholder:text-white/50"
+                  placeholder="Describe how to set up the activity..."
+                />
+              </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="drill-video" className="text-white">
-                      Video URL
-                    </Label>
-                    <Input
-                      id="drill-video"
-                      value={newDrill.videoUrl || ""}
-                      onChange={(e) => setNewDrill({ ...newDrill, videoUrl: e.target.value })}
-                      className="bg-white/10 border-white/20 text-white placeholder:text-white/50 hover:bg-white/20"
-                      placeholder="YouTube or other video URL demonstrating the drill"
-                    />
-                    <div className="text-xs text-white/50">
-                      Add a link to a video demonstration of the drill (YouTube, Vimeo, etc.)
-                    </div>
-                  </div>
-
-                  <div className="mt-6 p-4 border border-dashed border-white/20 rounded-lg">
-                    <div className="text-center">
-                      <div className="mb-2">
-                        <Upload className="h-8 w-8 mx-auto text-white/50" />
-                      </div>
-                      <p className="text-white/70 mb-2">Drag and drop files here or click to upload</p>
-                      <Button variant="outline" className="border-white/20 text-white hover:bg-white/20">
-                        Upload Files
-                      </Button>
-                      <p className="text-xs text-white/50 mt-2">Supports JPG, PNG, GIF up to 5MB</p>
-                    </div>
-                  </div>
-                </TabsContent>
-              </Tabs>
+              <div className="space-y-2">
+                <Label htmlFor="activity-instructions" className="text-white">Instructions</Label>
+                <textarea
+                  id="activity-instructions"
+                  value={newDrill.instructions || ""}
+                  onChange={(e) => setNewDrill({ ...newDrill, instructions: e.target.value })}
+                  className="w-full h-32 bg-white/10 border-white/20 text-white rounded-md p-2 placeholder:text-white/50"
+                  placeholder="Step-by-step instructions for running the activity..."
+                />
+              </div>
             </div>
           </ScrollArea>
 
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowNewDrillDialog(false)}
-              className="border-white/20 text-white hover:bg-white/20"
-            >
-              Cancel
-            </Button>
-            <Button onClick={addNewDrill} className="bg-blue-600 hover:bg-blue-700 text-white">
-              Create Drill
-            </Button>
+            <div className="flex justify-between w-full">
+              <Button
+                variant="outline"
+                className="border-white/20 text-white hover:bg-white/20"
+                onClick={() => setShowNewDrillDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+                onClick={addNewDrill}
+                disabled={!newDrill.name || !newDrill.description}
+              >
+                Create Activity/Drill
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>

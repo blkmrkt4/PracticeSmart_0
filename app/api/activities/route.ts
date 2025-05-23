@@ -1,31 +1,55 @@
 import { NextResponse } from 'next/server';
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
 
 export async function POST(request: Request) {
   try {
     const activityData = await request.json();
+    const supabase = createRouteHandlerClient({ cookies });
     
-    // Here you would typically save to a database
-    // For now, we'll just log and return the data
-    console.log('Creating new activity:', activityData);
+    // Get the current user session
+    const { data: { session } } = await supabase.auth.getSession();
     
-    // Simulate database save with a delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    if (!session) {
+      return NextResponse.json(
+        { success: false, error: 'Not authenticated' },
+        { status: 401 }
+      );
+    }
+    
+    // Add user_id to the activity data
+    const activityWithUser = {
+      ...activityData,
+      user_id: session.user.id,
+      created_at: new Date().toISOString()
+    };
+    
+    // Save to Supabase
+    const { data, error } = await supabase
+      .from('drills')
+      .insert(activityWithUser)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Supabase error:', error);
+      throw new Error(error.message);
+    }
     
     return NextResponse.json(
       { 
         success: true, 
-        data: { 
-          ...activityData,
-          id: Date.now(), // Simulate generated ID
-          createdAt: new Date().toISOString()
-        } 
+        data: data
       },
       { status: 201 }
     );
   } catch (error) {
     console.error('Error creating activity:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to create activity' },
+      { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Failed to create activity' 
+      },
       { status: 500 }
     );
   }
