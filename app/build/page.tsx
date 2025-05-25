@@ -18,6 +18,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
+import { Switch } from "@/components/ui/switch"
 import { toast } from "@/components/ui/use-toast"
 import { SportsActivitiesSelect } from "@/components/sports-activities-select"
 import {
@@ -49,13 +50,12 @@ type Drill = {
   name: string
   description: string
   duration: number
-  category: string
+  activity_tagging: string
   skillLevel: string
   players: string
   equipment: string[]
   sport: string
   objectives: string[]
-  type: string
   isCustom?: boolean
   setup?: string
   instructions?: string
@@ -63,6 +63,7 @@ type Drill = {
   tips?: string
   imageUrl?: string
   videoUrl?: string
+  tagClassification?: "sport-specific" | "selective-universal" | "universal"
 }
 
 type PracticeDrill = {
@@ -468,25 +469,43 @@ const sampleSavedPlans: PracticePlan[] = [
   },
 ]
 
-// Categories for filtering
-const categories = [
+// Activity tagging options
+const activityTaggingOptions = [
   "All",
-  "Warm-up",
+  "Technique",
+  "Tactics",
+  "Physical Conditioning",
+  "Team Building",
+  "Game Situations",
+  "Individual Skills",
+  "Group Skills",
+  "Strategy",
+  "Mental Preparation",
+  "Recovery",
+  "Strength",
+  "Power",
+  "Endurance",
+  "Zone 2",
+  "Agility",
+  "Core Stability",
+  "Injury Prevention",
+  "Training",
+  "Tactical",
+  "Drill",
   "Passing",
-  "Dribbling",
   "Shooting",
   "Defending",
+  "Game Play",
+  "Dribbling",
+  "Warm-up",
+  "Cool Down",
   "Attacking",
   "Possession",
   "Game Simulation",
   "Goalkeeping",
   "Fitness",
-  "Tactical",
-  "Strength",
-  "Agility",
   "Ball Control",
   "Mental",
-  "Cool Down",
 ]
 
 export default function BuildPage() {
@@ -494,8 +513,8 @@ export default function BuildPage() {
   const [selectedSport, setSelectedSport] = useState("soccer-football")
   const [practiceDuration, setPracticeDuration] = useState(90)
   const [selectedCategory, setSelectedCategory] = useState("All")
-  const [selectedType, setSelectedType] = useState("All Types")
   const [searchQuery, setSearchQuery] = useState("")
+  const [showSportSpecificOnly, setShowSportSpecificOnly] = useState(false)
   const [expandedDrills, setExpandedDrills] = useState<Record<string, boolean>>({})
   const [allExpanded, setAllExpanded] = useState(false)
   const [isClient, setIsClient] = useState(false) // For client-side rendering
@@ -512,6 +531,8 @@ export default function BuildPage() {
   const [isEditingName, setIsEditingName] = useState(false)
   const [showSavedPlans, setShowSavedPlans] = useState(false)
   const [showSaveDialog, setShowSaveDialog] = useState(false)
+  const [showDurationDialog, setShowDurationDialog] = useState(false)
+  const [customDuration, setCustomDuration] = useState(practiceDuration)
 
   // Handle client-side rendering for export link to prevent hydration errors
   useEffect(() => {
@@ -538,14 +559,14 @@ export default function BuildPage() {
     name: "",
     description: "",
     duration: 15,
-    category: "Passing",
+    activity_tagging: "passing",
     skillLevel: "Intermediate",
     players: "Any",
     equipment: [],
     sport: selectedSport,
     objectives: [""],
-    type: "Drills",
     isCustom: true,
+    tagClassification: "sport-specific"
   })
 
   // Save current plan to localStorage whenever it changes
@@ -557,7 +578,40 @@ export default function BuildPage() {
     }
   }, [currentPlan])
 
-  // Filter drills based on search, category, and type
+  // Helper function to determine tag classification if not explicitly set
+  const getTagClassification = (drill: Drill): "sport-specific" | "selective-universal" | "universal" => {
+    // If explicitly set, use that value
+    if (drill.tagClassification) {
+      return drill.tagClassification;
+    }
+    
+    // Otherwise, determine based on activity type
+    // Universal tags (applicable to all sports)
+    const universalTags = ["Warm-up", "Cool Down", "Recovery", "Mental", "Strength", "Team Building"];
+    
+    // Check if the activity is universal
+    if (universalTags.includes(drill.activity_tagging)) {
+      return "universal";
+    }
+    
+    // Sport-specific tags (only apply to the current sport)
+    const sportSpecificMap: Record<string, string[]> = {
+      "soccer-football": ["Passing", "Shooting", "Defending", "Dribbling", "Ball Control"],
+      "basketball": ["Shooting", "Dribbling", "Defense", "Rebounding"],
+      "baseball": ["Batting", "Fielding", "Pitching", "Base Running"],
+      // Add more sports as needed
+    };
+    
+    // Check if the activity is sport-specific for the current sport
+    if (sportSpecificMap[selectedSport]?.includes(drill.activity_tagging)) {
+      return "sport-specific";
+    }
+    
+    // Default to selective-universal (cross-sport but not universal)
+    return "selective-universal";
+  };
+
+  // Filter drills based on search, category, type, and tag classification
   // Combine sample and custom drills, then filter
   const allDrills = [...sampleDrills, ...customDrills]
   
@@ -565,14 +619,19 @@ export default function BuildPage() {
   const availableSports = Array.from(new Set(allDrills.map(drill => drill.sport)))
   const filteredDrills = allDrills.filter((drill) => {
     const matchesSport = selectedSport === "all" || drill.sport === selectedSport
-    const matchesCategory = selectedCategory === "All" || drill.category === selectedCategory
-    const matchesType = selectedType === "All Types" || drill.type === selectedType
+    const matchesCategory = selectedCategory === "All" || drill.activity_tagging === selectedCategory.toLowerCase()
     const matchesSearch =
       searchQuery === "" ||
       drill.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       drill.description.toLowerCase().includes(searchQuery.toLowerCase())
+      
+    // Additional filter for sport-specific toggle
+    const tagClassification = getTagClassification(drill);
+    const matchesTagFilter = !showSportSpecificOnly || 
+      tagClassification === "sport-specific" || 
+      tagClassification === "universal";
 
-    return matchesSport && matchesCategory && matchesType && matchesSearch
+    return matchesSport && matchesCategory && matchesSearch && matchesTagFilter
   })
 
   // Calculate total duration of current plan
@@ -731,7 +790,7 @@ export default function BuildPage() {
   }
 
   // Add new custom drill
-  const addNewDrill = () => {
+  const addNewDrill = async () => {
     if (!newDrill.name || !newDrill.description) {
       toast({
         title: "Error",
@@ -741,51 +800,96 @@ export default function BuildPage() {
       return
     }
 
-    // Generate a stable ID using a counter - this avoids hydration errors
-    // since it will only run on the client side after the form is submitted
-    const customDrill: Drill = {
-      id: `custom-drill-${customDrills.length + 1}-${newDrill.name.toLowerCase().replace(/\s+/g, '-')}`,
-      name: newDrill.name || "",
-      description: newDrill.description || "",
-      duration: newDrill.duration || 15,
-      category: newDrill.category || "Other",
-      skillLevel: newDrill.skillLevel || "Intermediate",
-      players: newDrill.players || "Any",
-      equipment: newDrill.equipment || [],
-      sport: newDrill.sport || selectedSport,
-      objectives: newDrill.objectives || [""],
-      type: newDrill.type || "Drills",
-      isCustom: true,
-      setup: newDrill.setup,
-      instructions: newDrill.instructions,
-      variations: newDrill.variations,
-      tips: newDrill.tips,
-      imageUrl: newDrill.imageUrl,
-      videoUrl: newDrill.videoUrl,
+    try {
+      // Prepare data for submission to Supabase
+      const submissionData = {
+        title: newDrill.name,
+        sport: newDrill.sport || selectedSport,
+        activity_tagging: newDrill.activity_tagging,
+        description: newDrill.description,
+        setup_instructions: newDrill.setup,
+        coaching_points: newDrill.tips,
+        duration: newDrill.duration || 15,
+        equipment: newDrill.equipment || [],
+        participants: newDrill.players,
+        skill_level: newDrill.skillLevel || "All Levels", // Match the exact values from database constraint
+        type: newDrill.type || "Drills", // Match the exact values from database constraint
+        is_custom: true,
+        video_url: newDrill.videoUrl,
+        image_url: newDrill.imageUrl,
+        objectives: newDrill.objectives || []
+      }
+
+      // Log the data being sent
+      console.log('Submitting activity data:', JSON.stringify(submissionData, null, 2));
+
+      // Save to Supabase using the same API endpoint
+      const response = await fetch('/api/activities', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(submissionData),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to create activity/drill')
+      }
+
+      // Also add to local state for immediate display
+      const customDrill: Drill = {
+        id: result.data.id || `custom-drill-${customDrills.length + 1}-${newDrill.name.toLowerCase().replace(/\s+/g, '-')}`,
+        name: newDrill.name || "",
+        description: newDrill.description || "",
+        duration: newDrill.duration || 15,
+        category: newDrill.category || "Other",
+        skillLevel: newDrill.skillLevel || "All Levels",
+        players: newDrill.players || "Any",
+        equipment: newDrill.equipment || [],
+        sport: newDrill.sport || selectedSport,
+        objectives: newDrill.objectives || [""],
+        type: newDrill.type || "Drills",
+        isCustom: true,
+        setup: newDrill.setup,
+        instructions: newDrill.instructions,
+        variations: newDrill.variations,
+        tips: newDrill.tips,
+        imageUrl: newDrill.imageUrl,
+        videoUrl: newDrill.videoUrl,
+      }
+
+      setCustomDrills([...customDrills, customDrill])
+      setShowNewDrillDialog(false)
+
+      // Reset new drill form
+      setNewDrill({
+        name: "",
+        description: "",
+        duration: 15,
+        category: "Passing",
+        skillLevel: "All Levels", // Match database constraint
+        players: "Any",
+        equipment: [],
+        sport: selectedSport,
+        objectives: [""],
+        type: "Drills", // Match database constraint
+        isCustom: true,
+      })
+
+      toast({
+        title: "Drill Created",
+        description: `${customDrill.name} has been added to your library and saved to database`,
+      })
+    } catch (error) {
+      console.error('Error creating activity:', error)
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : 'Failed to create activity',
+        variant: "destructive",
+      })
     }
-
-    setCustomDrills([...customDrills, customDrill])
-    setShowNewDrillDialog(false)
-
-    // Reset new drill form
-    setNewDrill({
-      name: "",
-      description: "",
-      duration: 15,
-      category: "Passing",
-      skillLevel: "Intermediate",
-      players: "Any",
-      equipment: [],
-      sport: selectedSport,
-      objectives: [""],
-      type: "Drills",
-      isCustom: true,
-    })
-
-    toast({
-      title: "Drill Created",
-      description: `${customDrill.name} has been added to your library`,
-    })
   }
 
   return (
@@ -885,7 +989,7 @@ export default function BuildPage() {
               {/* Sport and Duration Settings */}
               <Card className="bg-gray-900/80 border-white/20 text-white">
                 <CardHeader>
-                  <CardTitle>Activity Settings</CardTitle>
+                  <CardTitle>Training Plan Settings</CardTitle>
                   <CardDescription className="text-white/80">Configure your activity session</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -901,24 +1005,38 @@ export default function BuildPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <div className="flex justify-between">
+                    <div className="flex justify-between items-center">
                       <Label htmlFor="duration" className="text-white">
                         Activity Duration
                       </Label>
-                      <span className="text-sm text-white">{practiceDuration} minutes</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-white">{practiceDuration} minutes</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 text-white/70 hover:text-white hover:bg-white/10"
+                          onClick={() => {
+                            setCustomDuration(practiceDuration);
+                            setShowDurationDialog(true);
+                          }}
+                        >
+                          <Clock className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                     <Slider
                       id="duration"
-                      min={30}
-                      max={180}
+                      min={0}
+                      max={90}
                       step={5}
-                      value={[practiceDuration]}
+                      value={[Math.min(practiceDuration, 90)]}
                       onValueChange={(value) => setPracticeDuration(value[0])}
                       className="py-2"
                     />
                     <div className="flex justify-between text-xs text-white/70">
-                      <span>30 min</span>
-                      <span>180 min</span>
+                      <span>0 min</span>
+                      <span>90+ min</span>
                     </div>
                   </div>
                 </CardContent>
@@ -929,8 +1047,8 @@ export default function BuildPage() {
                 <CardHeader className="pb-3">
                   <div className="flex justify-between items-center">
                     <div>
-                      <CardTitle>Drill Library</CardTitle>
-                      <CardDescription className="text-white/70">Drag drills to your training plan</CardDescription>
+                      <CardTitle>Activity Library</CardTitle>
+                      <CardDescription className="text-white/70">Drag activities to your training plan</CardDescription>
                     </div>
                     <Button
                       size="sm"
@@ -943,23 +1061,156 @@ export default function BuildPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {/* Quick Filter Tags */}
+                  {/* Activity Tagging Filter */}
                   <div className="mb-2">
-                    <div className="flex flex-wrap gap-2">
-                      {drillTypes.map((type) => (
-                        <Badge
-                          key={type}
-                          variant={selectedType === type ? "default" : "outline"}
-                          className={
-                            selectedType === type
-                              ? "cursor-pointer bg-blue-600 hover:bg-blue-700 text-white"
-                              : "cursor-pointer bg-white/10 hover:bg-white/20 border-white/20 text-white"
+                    <div className="flex justify-between items-center mb-2">
+                      <h3 className="text-sm font-medium text-white">Activity Tags</h3>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-white/70">Show Sport-Specific Only</span>
+                        <Switch
+                          checked={showSportSpecificOnly}
+                          onCheckedChange={setShowSportSpecificOnly}
+                          className="data-[state=checked]:bg-blue-600"
+                        />
+                      </div>
+                    </div>
+                    {/* Group tags by classification */}
+                    <div className="space-y-3">
+                      {/* Process tags to group them by classification */}
+                      {(() => {
+                        // Define tag groups
+                        const universalTags = ["Warm-up", "Cool Down", "Recovery", "Mental", "Strength", "Team Building"];
+                        const sportSpecificMap: Record<string, string[]> = {
+                          "soccer-football": ["Passing", "Shooting", "Defending", "Dribbling", "Ball Control"],
+                          "basketball": ["Shooting", "Dribbling", "Defense", "Rebounding"],
+                          "baseball": ["Batting", "Fielding", "Pitching", "Base Running"],
+                        };
+                        
+                        // Group tags by classification
+                        const sportSpecificTags: string[] = [];
+                        const selectiveUniversalTags: string[] = [];
+                        const universalTagsList: string[] = [];
+                        
+                        // Categorize each tag
+                        activityTaggingOptions.forEach(tag => {
+                          if (tag === "All") return; // Skip the "All" tag
+                          
+                          if (universalTags.includes(tag)) {
+                            universalTagsList.push(tag);
+                          } else if (sportSpecificMap[selectedSport]?.includes(tag)) {
+                            sportSpecificTags.push(tag);
+                          } else {
+                            selectiveUniversalTags.push(tag);
                           }
-                          onClick={() => setSelectedType(type)}
-                        >
-                          {type}
-                        </Badge>
-                      ))}
+                        });
+                        
+                        // Skip selective universal tags if toggle is on
+                        const tagsToRender = showSportSpecificOnly ? 
+                          [...sportSpecificTags, ...universalTagsList] : 
+                          [...sportSpecificTags, ...selectiveUniversalTags, ...universalTagsList];
+                        
+                        // Add the "All" tag at the beginning
+                        tagsToRender.unshift("All");
+                        
+                        // Render tag groups
+                        return (
+                          <div className="space-y-2">
+                            {/* Sport-specific tags */}
+                            {sportSpecificTags.length > 0 && (
+                              <div>
+                                <div className="flex items-center mb-1">
+                                  <div className="w-2 h-2 rounded-full bg-red-500 mr-1"></div>
+                                  <span className="text-xs text-white/60">Sport-specific</span>
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                  {sportSpecificTags.map(tag => (
+                                    <Badge
+                                      key={tag}
+                                      variant={selectedCategory === tag ? "default" : "outline"}
+                                      className={
+                                        selectedCategory === tag
+                                          ? `cursor-pointer bg-red-500 hover:bg-red-600 text-white border border-red-500 border-[1px]`
+                                          : `cursor-pointer bg-white/10 hover:bg-white/20 text-white border border-red-500 border-[1px]`
+                                      }
+                                      onClick={() => setSelectedCategory(tag)}
+                                    >
+                                      {tag}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Selective universal tags */}
+                            {!showSportSpecificOnly && selectiveUniversalTags.length > 0 && (
+                              <div>
+                                <div className="flex items-center mb-1">
+                                  <div className="w-2 h-2 rounded-full bg-yellow-500 mr-1"></div>
+                                  <span className="text-xs text-white/60">Selective universal</span>
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                  {selectiveUniversalTags.map(tag => (
+                                    <Badge
+                                      key={tag}
+                                      variant={selectedCategory === tag ? "default" : "outline"}
+                                      className={
+                                        selectedCategory === tag
+                                          ? `cursor-pointer bg-yellow-500 hover:bg-yellow-600 text-black border border-yellow-500 border-[1px]`
+                                          : `cursor-pointer bg-white/10 hover:bg-white/20 text-white border border-yellow-500 border-[1px]`
+                                      }
+                                      onClick={() => setSelectedCategory(tag)}
+                                    >
+                                      {tag}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Universal tags */}
+                            {universalTagsList.length > 0 && (
+                              <div>
+                                <div className="flex items-center mb-1">
+                                  <div className="w-2 h-2 rounded-full bg-green-500 mr-1"></div>
+                                  <span className="text-xs text-white/60">Universal</span>
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                  {universalTagsList.map(tag => (
+                                    <Badge
+                                      key={tag}
+                                      variant={selectedCategory === tag ? "default" : "outline"}
+                                      className={
+                                        selectedCategory === tag
+                                          ? `cursor-pointer bg-green-500 hover:bg-green-600 text-white border border-green-500 border-[1px]`
+                                          : `cursor-pointer bg-white/10 hover:bg-white/20 text-white border border-green-500 border-[1px]`
+                                      }
+                                      onClick={() => setSelectedCategory(tag)}
+                                    >
+                                      {tag}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* All tag */}
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              <Badge
+                                key="All"
+                                variant={selectedCategory === "All" ? "default" : "outline"}
+                                className={
+                                  selectedCategory === "All"
+                                    ? `cursor-pointer bg-gray-500 hover:bg-gray-600 text-white border border-gray-500 border-[1px]`
+                                    : `cursor-pointer bg-white/10 hover:bg-white/20 text-white border border-gray-500 border-[1px]`
+                                }
+                                onClick={() => setSelectedCategory("All")}
+                              >
+                                All
+                              </Badge>
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
 
@@ -969,7 +1220,7 @@ export default function BuildPage() {
                       <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-white/50" />
                       <Input
                         type="search"
-                        placeholder="Search drills..."
+                        placeholder="Search Activities or Drills"
                         className="pl-9 bg-white/10 border-white/20 text-white placeholder:text-white/50"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
@@ -981,9 +1232,9 @@ export default function BuildPage() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="bg-gray-900 border-white/10 text-white">
-                        {categories.map((category) => (
-                          <SelectItem key={category} value={category}>
-                            {category}
+                        {activityTaggingOptions.map((tag: string) => (
+                          <SelectItem key={tag} value={tag}>
+                            {tag}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -1126,7 +1377,7 @@ export default function BuildPage() {
                         className="h-8 text-xs text-white/70 hover:text-white hover:bg-white/10 border border-white/20"
                         onClick={() => {
                           setAllExpanded(!allExpanded);
-                          const newExpandedState = {};
+                          const newExpandedState: Record<string, boolean> = {};
                           currentPlan.drills.forEach(drill => {
                             newExpandedState[drill.id] = !allExpanded;
                           });
@@ -1673,6 +1924,58 @@ export default function BuildPage() {
         </DialogContent>
       </Dialog>
 
+      {/* Custom Duration Dialog */}
+      <Dialog open={showDurationDialog} onOpenChange={setShowDurationDialog}>
+        <DialogContent className="bg-gray-900 text-white border-white/20 sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Custom Duration</DialogTitle>
+            <DialogDescription className="text-white/70">
+              Enter a custom duration for your activity (in minutes).
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="custom-duration" className="text-right">
+                Minutes
+              </Label>
+              <Input
+                id="custom-duration"
+                type="number"
+                min="0"
+                value={customDuration}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value, 10);
+                  if (!isNaN(value) && value >= 0) {
+                    setCustomDuration(value);
+                  }
+                }}
+                className="col-span-3 bg-gray-800 border-white/20 text-white"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setShowDurationDialog(false)}
+              className="text-white hover:bg-white/10"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={() => {
+                setPracticeDuration(customDuration);
+                setShowDurationDialog(false);
+              }}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              Apply
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* New Drill Dialog */}
       <Dialog open={showNewDrillDialog} onOpenChange={setShowNewDrillDialog}>
         <DialogContent className="bg-gray-900 border-white/20 text-white max-w-4xl max-h-[90vh] overflow-hidden">
@@ -1709,7 +2012,7 @@ export default function BuildPage() {
                 </div>
               </div>
 
-              {/* Sport and Focus Area */}
+              {/* Sport and Activity Tagging */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="activity-sport" className="text-white">Sport or Activity</Label>
@@ -1719,20 +2022,20 @@ export default function BuildPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="activity-focus" className="text-white">Focus Area</Label>
+                  <Label htmlFor="activity-tagging" className="text-white">Activity Tagging</Label>
                   <Select
-                    value={newDrill.category}
-                    onValueChange={(value) => setNewDrill({ ...newDrill, category: value })}
+                    value={newDrill.activity_tagging}
+                    onValueChange={(value) => setNewDrill({ ...newDrill, activity_tagging: value })}
                   >
                     <SelectTrigger id="activity-focus" className="bg-white/10 border-white/20 text-white">
-                      <SelectValue placeholder="Select focus area" />
+                      <SelectValue placeholder="Select activity tagging" />
                     </SelectTrigger>
                     <SelectContent className="bg-gray-900 border-white/20 text-white">
-                      {categories
-                        .filter((c) => c !== "All")
-                        .map((category) => (
-                          <SelectItem key={category} value={category.toLowerCase()}>
-                            {category}
+                      {activityTaggingOptions
+                        .filter((tag: string) => tag !== "All")
+                        .map((tag: string) => (
+                          <SelectItem key={tag} value={tag.toLowerCase()}>
+                            {tag}
                           </SelectItem>
                         ))}
                     </SelectContent>
@@ -1740,7 +2043,7 @@ export default function BuildPage() {
                 </div>
               </div>
 
-              {/* Skill Level and Category */}
+              {/* Skill Level and Tag Classification */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="activity-skill" className="text-white">Skill Level</Label>
@@ -1760,24 +2063,45 @@ export default function BuildPage() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="activity-type" className="text-white">Category</Label>
+                  <Label htmlFor="activity-classification" className="text-white">Tag Classification</Label>
                   <Select
-                    value={newDrill.type}
-                    onValueChange={(value) => setNewDrill({ ...newDrill, type: value })}
+                    value={newDrill.tagClassification}
+                    onValueChange={(value: "sport-specific" | "selective-universal" | "universal") => 
+                      setNewDrill({ ...newDrill, tagClassification: value })
+                    }
                   >
-                    <SelectTrigger id="activity-type" className="bg-white/10 border-white/20 text-white">
-                      <SelectValue placeholder="Select category" />
+                    <SelectTrigger 
+                      id="activity-classification" 
+                      className="bg-white/10 border-white/20 text-white"
+                    >
+                      <SelectValue placeholder="Select tag classification" />
                     </SelectTrigger>
                     <SelectContent className="bg-gray-900 border-white/20 text-white">
-                      {drillTypes
-                        .filter((t) => t !== "All Types")
-                        .map((type) => (
-                          <SelectItem key={type} value={type.toLowerCase()}>
-                            {type}
-                          </SelectItem>
-                        ))}
+                      <SelectItem value="sport-specific">
+                        <div className="flex items-center">
+                          <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
+                          <span>Sport-Specific (Red)</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="selective-universal">
+                        <div className="flex items-center">
+                          <div className="w-3 h-3 rounded-full bg-yellow-500 mr-2"></div>
+                          <span>Selective Universal (Yellow)</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="universal">
+                        <div className="flex items-center">
+                          <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
+                          <span>Universal (Green)</span>
+                        </div>
+                      </SelectItem>
                     </SelectContent>
                   </Select>
+                  <p className="text-xs text-white/60 mt-1">
+                    <span className="font-medium">Red:</span> Sport-specific activities<br/>
+                    <span className="font-medium">Yellow:</span> Cross-sport with selective applicability<br/>
+                    <span className="font-medium">Green:</span> Universal activities for all sports
+                  </p>
                 </div>
               </div>
 

@@ -12,9 +12,9 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { ArrowLeft, Upload } from "lucide-react"
 import { SportsActivitiesSelect } from "@/components/sports-activities-select"
 
-// Define available focus areas
+// Define available activity tagging options
 
-const focusAreas = [
+const activityTaggingOptions = [
   "Technique",
   "Tactics",
   "Physical Conditioning",
@@ -31,14 +31,26 @@ const focusAreas = [
   "Zone 2",
   "Agility",
   "Core Stability",
-  "Injury Prevention"
+  "Injury Prevention",
+  // Added from Category values
+  "Training",
+  "Tactical",
+  "Drill",
+  // Added from export page categories
+  "Passing",
+  "Shooting",
+  "Defending",
+  "Game Play",
+  "Dribbling",
+  "Warm-up",
+  "Cool Down"
 ]
 
 export default function NewActivityPage() {
   const [activity, setActivity] = useState({
     title: "",
     sport: "soccer", // Default sport
-    focus_area: "",
+    activity_tagging: "",
     description: "",
     video_url: "",
     image_url: "",
@@ -48,8 +60,7 @@ export default function NewActivityPage() {
     equipment: "",
     participants: "",
     user_id: "", // Will be set from session
-    skill_level: "all",
-    category: "drill"
+    skill_level: "All Levels"
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -95,6 +106,9 @@ export default function NewActivityPage() {
         updated_at: new Date().toISOString()
       }
       
+      // Log the exact data being sent to the API
+      console.log('Submitting activity data:', JSON.stringify(submissionData, null, 2));
+      
       const response = await fetch('/api/activities', {
         method: 'POST',
         headers: {
@@ -114,7 +128,7 @@ export default function NewActivityPage() {
       setActivity({
         title: "",
         sport: activity.sport, // Keep the same sport
-        focus_area: "",
+        activity_tagging: "",
         description: "",
         video_url: "",
         image_url: "",
@@ -124,18 +138,27 @@ export default function NewActivityPage() {
         equipment: "",
         participants: "",
         user_id: "",
-        skill_level: "all",
-        category: "drill"
+        skill_level: "All Levels"
       })
       
-      // Reset success message after 3 seconds and redirect
+      // Reset success message after 3 seconds and redirect to homepage
       setTimeout(() => {
         setSuccess(false)
-        window.location.href = '/activities'
+        window.location.href = '/'
       }, 3000)
     } catch (err) {
       console.error('Error creating activity:', err)
-      setError(err instanceof Error ? err.message : 'An unknown error occurred')
+      // More detailed error logging
+      if (err instanceof Error) {
+        console.error('Error message:', err.message)
+        console.error('Error stack:', err.stack)
+      }
+      // Try to extract more information from the response if available
+      if (err instanceof Error && err.message.includes('Failed to create activity')) {
+        setError('Server error: ' + err.message)
+      } else {
+        setError(err instanceof Error ? err.message : 'An unknown error occurred')
+      }
     } finally {
       setIsSubmitting(false)
     }
@@ -201,7 +224,7 @@ export default function NewActivityPage() {
                   </div>
                 </div>
 
-                {/* Sport and Focus Area */}
+                {/* Sport and Activity Tagging */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="sport" className="text-white">Sport or Activity</Label>
@@ -212,17 +235,17 @@ export default function NewActivityPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="focusArea" className="text-white">Focus Area</Label>
+                    <Label htmlFor="activityTagging" className="text-white">Activity Tagging</Label>
                     <Select
-                      value={activity.focus_area}
-                      onValueChange={(value) => setActivity({ ...activity, focus_area: value })}
+                      value={activity.activity_tagging}
+                      onValueChange={(value) => setActivity({ ...activity, activity_tagging: value })}
                       required
                     >
                       <SelectTrigger className="bg-white/10 border-white/20 text-white">
-                        <SelectValue placeholder="Select focus area" />
+                        <SelectValue placeholder="Select activity tagging" />
                       </SelectTrigger>
                       <SelectContent>
-                        {focusAreas.map((area) => (
+                        {activityTaggingOptions.map((area: string) => (
                           <SelectItem key={area} value={area.toLowerCase()}>
                             {area}
                           </SelectItem>
@@ -232,8 +255,8 @@ export default function NewActivityPage() {
                   </div>
                 </div>
 
-                {/* Skill Level and Category */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Skill Level */}
+                <div className="grid grid-cols-1 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="skillLevel" className="text-white">Skill Level</Label>
                     <Select
@@ -244,28 +267,10 @@ export default function NewActivityPage() {
                         <SelectValue placeholder="Select skill level" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="beginner">Beginner</SelectItem>
-                        <SelectItem value="intermediate">Intermediate</SelectItem>
-                        <SelectItem value="advanced">Advanced</SelectItem>
-                        <SelectItem value="all">All Levels</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="category" className="text-white">Category</Label>
-                    <Select
-                      value={activity.category}
-                      onValueChange={(value) => setActivity({ ...activity, category: value })}
-                    >
-                      <SelectTrigger className="bg-white/10 border-white/20 text-white">
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="warmup">Warm-up</SelectItem>
-                        <SelectItem value="drill">Drill</SelectItem>
-                        <SelectItem value="game">Game</SelectItem>
-                        <SelectItem value="fitness">Fitness</SelectItem>
-                        <SelectItem value="tactical">Tactical</SelectItem>
+                        <SelectItem value="Beginner">Beginner</SelectItem>
+                        <SelectItem value="Intermediate">Intermediate</SelectItem>
+                        <SelectItem value="Advanced">Advanced</SelectItem>
+                        <SelectItem value="All Levels">All Levels</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

@@ -15,7 +15,7 @@ export interface Database {
           created_at: string
           title: string
           sport: string
-          focus_area: string
+          activity_tagging: string
           description: string
           video_url: string
           image_url: string
@@ -26,7 +26,6 @@ export interface Database {
           participants: string
           user_id: string
           skill_level: 'All Levels' | 'Beginner' | 'Intermediate' | 'Advanced'
-          category: string
           type: 'Drills' | 'Scrimmage' | 'Conditioning' | 'Stretching' | 'Instructions' | 'Weights' | 'Plyometrics' | 'Hand-Eye' | 'Footwork' | 'Cooldown' | 'Meditation'
           objectives: string[]
           variations: string | null
@@ -38,7 +37,7 @@ export interface Database {
           created_at?: string
           title: string
           sport: string
-          focus_area: string
+          activity_tagging: string
           description: string
           video_url: string
           image_url: string
@@ -61,7 +60,7 @@ export interface Database {
           created_at?: string
           title?: string
           sport?: string
-          focus_area?: string
+          activity_tagging?: string
           description?: string
           video_url?: string
           image_url?: string

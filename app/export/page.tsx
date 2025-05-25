@@ -14,7 +14,7 @@ type Drill = {
   name: string
   description: string
   duration: number
-  category: string
+  activity_tagging: string
   skillLevel: string
   players: string
   equipment: string[]
@@ -162,7 +162,7 @@ const sampleDrills: Drill[] = [
     name: "Passing Triangle",
     description: "Players form triangles and practice passing and movement",
     duration: 15,
-    category: "Passing",
+    activity_tagging: "Passing",
     skillLevel: "Intermediate",
     players: "9+",
     equipment: ["Balls", "Cones"],
@@ -188,7 +188,7 @@ const sampleDrills: Drill[] = [
     name: "Shooting Practice",
     description: "Players take turns shooting at goal from various positions",
     duration: 20,
-    category: "Shooting",
+    activity_tagging: "Shooting",
     skillLevel: "All Levels",
     players: "6+",
     equipment: ["Balls", "Goals"],
@@ -215,7 +215,7 @@ const sampleDrills: Drill[] = [
     name: "1v1 Defending",
     description: "Players practice 1v1 defending techniques in a confined space",
     duration: 15,
-    category: "Defending",
+    activity_tagging: "Defending",
     skillLevel: "Intermediate",
     players: "8+",
     equipment: ["Balls", "Cones", "Pinnies"],
@@ -228,7 +228,7 @@ const sampleDrills: Drill[] = [
     name: "Small-Sided Game",
     description: "4v4 small-sided game with focus on quick transitions",
     duration: 25,
-    category: "Game Play",
+    activity_tagging: "Game Play",
     skillLevel: "All Levels",
     players: "8+",
     equipment: ["Balls", "Cones", "Pinnies"],
@@ -240,7 +240,7 @@ const sampleDrills: Drill[] = [
     id: "drill-5",
     name: "Dribbling Relay",
     duration: 10,
-    category: "Dribbling",
+    activity_tagging: "Dribbling",
     skillLevel: "Beginner",
     players: "6+",
     equipment: ["Balls", "Cones"],
@@ -253,7 +253,7 @@ const sampleDrills: Drill[] = [
     id: "drill-7",
     name: "Warm-up Jog & Stretch",
     duration: 10,
-    category: "Warm-up",
+    activity_tagging: "Warm-up",
     skillLevel: "All Levels",
     players: "Any",
     equipment: [],
@@ -266,7 +266,7 @@ const sampleDrills: Drill[] = [
     id: "drill-8",
     name: "Cool Down & Stretch",
     duration: 10,
-    category: "Cool Down",
+    activity_tagging: "Cool Down",
     skillLevel: "All Levels",
     players: "Any",
     equipment: [],
@@ -279,7 +279,7 @@ const sampleDrills: Drill[] = [
     id: "drill-11",
     name: "Defensive Shape",
     duration: 20,
-    category: "Defending",
+    activity_tagging: "Defending",
     skillLevel: "Intermediate",
     players: "11+",
     equipment: ["Balls", "Cones", "Pinnies"],
@@ -384,10 +384,10 @@ export default function ExportPage() {
       text += `${index + 1}. ${drill.name} (${drill.duration} minutes)\n`
       text += `   ${drill.description}\n`
       
-      // Add category, skill level, type, and players if available
-      if (fullDrill?.category || fullDrill?.skillLevel || fullDrill?.type || fullDrill?.players) {
+      // Add activity tagging, skill level, type, and players if available
+      if (fullDrill?.activity_tagging || fullDrill?.skillLevel || fullDrill?.type || fullDrill?.players) {
         text += `   `
-        if (fullDrill?.category) text += `Category: ${fullDrill.category} | `
+        if (fullDrill?.activity_tagging) text += `Activity Tagging: ${fullDrill.activity_tagging} | `
         if (fullDrill?.skillLevel) text += `Level: ${fullDrill.skillLevel} | `
         if (fullDrill?.type) text += `Type: ${fullDrill.type} | `
         if (fullDrill?.players) text += `Players: ${fullDrill.players}`
@@ -488,10 +488,10 @@ export default function ExportPage() {
           const fullDrill = findDrillById(drill.drillId);
           let detailsHtml = '';
           
-          // Add category, skill level, type, and players if available
-          if (fullDrill?.category || fullDrill?.skillLevel || fullDrill?.type || fullDrill?.players) {
+          // Add activity tagging, skill level, type, and players if available
+          if (fullDrill?.activity_tagging || fullDrill?.skillLevel || fullDrill?.type || fullDrill?.players) {
             detailsHtml += '<div class="drill-meta" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; font-size: 12px; color: #666;">';
-            if (fullDrill?.category) detailsHtml += `<div><strong>Category:</strong> ${fullDrill.category}</div>`;
+            if (fullDrill?.activity_tagging) detailsHtml += `<div><strong>Activity Tagging:</strong> ${fullDrill.activity_tagging}</div>`;
             if (fullDrill?.skillLevel) detailsHtml += `<div><strong>Level:</strong> ${fullDrill.skillLevel}</div>`;
             if (fullDrill?.type) detailsHtml += `<div><strong>Type:</strong> ${fullDrill.type}</div>`;
             if (fullDrill?.players) detailsHtml += `<div><strong>Players:</strong> ${fullDrill.players}</div>`;
@@ -751,9 +751,9 @@ ${html.replace(/([=])/g, "=$1").replace(/\n/g, "=0A")}
                                 <div className="mt-3 space-y-2 border-t border-white/10 pt-2">
                                   {/* Basic info grid */}
                                   <div className="grid grid-cols-2 gap-2 text-xs">
-                                    {fullDrill.category && (
+                                    {fullDrill.activity_tagging && (
                                       <div className="text-white/70">
-                                        <span className="font-medium text-white/90">Category:</span> {fullDrill.category}
+                                        <span className="font-medium text-white/90">Activity Tagging:</span> {fullDrill.activity_tagging}
                                       </div>
                                     )}
                                     {fullDrill.skillLevel && (
@@ -981,9 +981,9 @@ ${html.replace(/([=])/g, "=$1").replace(/\n/g, "=0A")}
                                 
                                 {/* Additional drill details */}
                                 <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-gray-500">
-                                  {fullDrill?.category && (
+                                  {fullDrill?.activity_tagging && (
                                     <div>
-                                      <span className="font-medium">Category:</span> {fullDrill.category}
+                                      <span className="font-medium">Activity Tagging:</span> {fullDrill.activity_tagging}
                                     </div>
                                   )}
                                   {fullDrill?.skillLevel && (
