@@ -38,6 +38,9 @@ export default function LandingPage() {
             >
               My Plans
             </Link>
+            <Link href="/teams" className="text-sm font-medium text-white/70 transition-colors hover:text-white">
+              Teams
+            </Link>
             <Link href="/invite" className="text-sm font-medium text-white/70 transition-colors hover:text-white">
               Invite a Friend
             </Link>

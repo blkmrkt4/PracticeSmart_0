@@ -1,11 +1,16 @@
 import { NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from '@supabase/supabase-js';
+import { Database } from '@/types/supabase';
+
+// Create a Supabase client with direct connection (for development only)
+// In production, you would use createRouteHandlerClient with proper cookie handling
+const supabaseUrl = 'https://lwvbkcwxjjrlpbgtddoz.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3dmJrY3d4ampybHBiZ3RkZG96Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc0MjY3MDQsImV4cCI6MjA2MzAwMjcwNH0.bPGn0rDqm1owPwhYcpB5ThSbQiZ4eIPgh5gMPjtLl6Q';
+const supabase = createClient<Database>(supabaseUrl, supabaseKey);
 
 export async function POST(request: Request) {
   try {
     const activityData = await request.json();
-    const supabase = createRouteHandlerClient({ cookies });
     
     // Add required fields with defaults for testing
     const activityWithUser = {
@@ -20,13 +25,23 @@ export async function POST(request: Request) {
       // Handle the renamed field - map focus_area to activity_tagging if present
       activity_tagging: activityData.activity_tagging || activityData.focus_area || '',
       is_custom: activityData.is_custom !== undefined ? activityData.is_custom : true,
-      // Using a fixed test UUID for user_id during development
-      user_id: '00000000-0000-0000-0000-000000000000',
+      // Using Robin Hutchinson's user ID for testing
+      user_id: '597256d8-8bbd-412d-a857-8e6c8b0244d3',
+      // Privacy level - default to private if not specified
+      privacy_level: activityData.privacy_level || 'private',
+      // Team ID - only include if privacy level is team and team_id is provided
+      team_id: activityData.privacy_level === 'team' && activityData.team_id ? activityData.team_id : null,
+      // Owner ID - for tracking who created the activity
+      owner_id: '597256d8-8bbd-412d-a857-8e6c8b0244d3',
       // Timestamps
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
     
+    console.log('Creating activity with privacy level:', activityWithUser.privacy_level);
+    if (activityWithUser.privacy_level === 'team') {
+      console.log('Team ID:', activityWithUser.team_id);
+    }
     
     // Save to Supabase
     const { data, error } = await supabase
