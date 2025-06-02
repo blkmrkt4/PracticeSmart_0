@@ -60,7 +60,8 @@ export default function NewActivityPage() {
     equipment: "",
     participants: "",
     user_id: "", // Will be set from session
-    skill_level: "All Levels"
+    skill_level: "All Levels",
+    tagClassification: "sport-specific" // Default tag classification
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -138,7 +139,8 @@ export default function NewActivityPage() {
         equipment: "",
         participants: "",
         user_id: "",
-        skill_level: "All Levels"
+        skill_level: "All Levels",
+        tagClassification: activity.tagClassification // Keep the same tag classification
       })
       
       // Reset success message after 3 seconds and redirect to homepage
@@ -241,13 +243,13 @@ export default function NewActivityPage() {
                       onValueChange={(value) => setActivity({ ...activity, activity_tagging: value })}
                       required
                     >
-                      <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                      <SelectTrigger id="activityTagging" className="bg-white/10 border-white/20 text-white">
                         <SelectValue placeholder="Select activity tagging" />
                       </SelectTrigger>
-                      <SelectContent>
-                        {activityTaggingOptions.map((area: string) => (
-                          <SelectItem key={area} value={area.toLowerCase()}>
-                            {area}
+                      <SelectContent className="bg-gray-900 border-white/20 text-white">
+                        {activityTaggingOptions.map((tag) => (
+                          <SelectItem key={tag} value={tag.toLowerCase()}>
+                            {tag}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -255,22 +257,52 @@ export default function NewActivityPage() {
                   </div>
                 </div>
 
-                {/* Skill Level */}
-                <div className="grid grid-cols-1 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="skillLevel" className="text-white">Skill Level</Label>
                     <Select
                       value={activity.skill_level}
                       onValueChange={(value) => setActivity({ ...activity, skill_level: value })}
                     >
-                      <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                      <SelectTrigger id="skillLevel" className="bg-white/10 border-white/20 text-white">
                         <SelectValue placeholder="Select skill level" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-gray-900 border-white/20 text-white">
+                        <SelectItem value="All Levels">All Levels</SelectItem>
                         <SelectItem value="Beginner">Beginner</SelectItem>
                         <SelectItem value="Intermediate">Intermediate</SelectItem>
                         <SelectItem value="Advanced">Advanced</SelectItem>
-                        <SelectItem value="All Levels">All Levels</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="tagClassification" className="text-white">Tag Classification</Label>
+                    <Select
+                      value={activity.tagClassification}
+                      onValueChange={(value) => setActivity({ ...activity, tagClassification: value })}
+                    >
+                      <SelectTrigger id="tagClassification" className="bg-white/10 border-white/20 text-white">
+                        <SelectValue placeholder="Select tag classification" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-gray-900 border-white/20 text-white">
+                        <SelectItem value="sport-specific">
+                          <div className="flex items-center">
+                            <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
+                            <span>Sport-Specific (Red)</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="selective-universal">
+                          <div className="flex items-center">
+                            <div className="w-3 h-3 rounded-full bg-yellow-500 mr-2"></div>
+                            <span>Selective Universal (Yellow)</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="universal">
+                          <div className="flex items-center">
+                            <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
+                            <span>Universal (Green)</span>
+                          </div>
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

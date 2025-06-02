@@ -12,6 +12,7 @@ import {
   mainNavLinks,
   secondaryNavLinks
 } from '@/components/ui/custom-sidebar';
+import { Toaster } from "@/components/ui/toaster";
 // Metadata is exported from metadata.ts
 
 // Metadata is exported from metadata.ts
@@ -62,7 +63,7 @@ export default function RootLayout({
                 </div>
                 
                 <SidebarFooter>
-                  © {new Date().getFullYear()} PracticeSmart
+                  &copy; {new Date().getFullYear()} PracticeSmart
                 </SidebarFooter>
               </SidebarBody>
               
@@ -73,6 +74,7 @@ export default function RootLayout({
             </Sidebar>
           </div>
         )}
+        <Toaster />
       </body>
     </html>
   )

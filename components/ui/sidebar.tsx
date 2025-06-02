@@ -3,7 +3,9 @@
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { VariantProps, cva } from "class-variance-authority"
-import { PanelLeft } from "lucide-react"
+import { PanelLeft } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import type { User } from "@supabase/supabase-js";
 
 import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
@@ -398,7 +400,29 @@ SidebarSeparator.displayName = "SidebarSeparator"
 const SidebarContent = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<"div">
->(({ className, ...props }, ref) => {
+>(({ className, children, ...restProps }, ref) => {
+  const [currentUser, setCurrentUser] = React.useState<User | null>(null);
+  const [loadingUser, setLoadingUser] = React.useState(true);
+
+  React.useEffect(() => {
+    const fetchUserAndListen = async () => {
+      setLoadingUser(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUser(user);
+      setLoadingUser(false);
+
+      const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+        setCurrentUser(session?.user ?? null);
+      });
+
+      return () => {
+        authListener?.subscription.unsubscribe();
+      };
+    };
+
+    fetchUserAndListen();
+  }, []);
+
   return (
     <div
       ref={ref}
@@ -407,25 +431,34 @@ const SidebarContent = React.forwardRef<
         "flex min-h-0 flex-1 flex-col gap-2 overflow-auto group-data-[collapsible=icon]:overflow-hidden",
         className
       )}
-      {...props}
-    />
-  )
+      {...restProps}
+    >
+      <div style={{ paddingBottom: '10px', borderBottom: '1px solid hsl(var(--border))', marginBottom: '10px', fontSize: '0.875rem', color: 'hsl(var(--foreground))' }}>
+        {loadingUser ? (
+          <span>Loading user...</span>
+        ) : currentUser ? (
+          <span>Logged in: {currentUser.email}</span>
+        ) : (
+          <span>Not logged in</span>
+        )}
+      </div>
+      {children}
+    </div>
+  );
 })
 SidebarContent.displayName = "SidebarContent"
 
 const SidebarGroup = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<"div">
->(({ className, ...props }, ref) => {
-  return (
-    <div
-      ref={ref}
-      data-sidebar="group"
-      className={cn("relative flex w-full min-w-0 flex-col p-2", className)}
-      {...props}
-    />
-  )
-})
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    data-sidebar="group"
+    className={cn("relative flex w-full min-w-0 flex-col p-2", className)}
+    {...props}
+  />
+))
 SidebarGroup.displayName = "SidebarGroup"
 
 const SidebarGroupLabel = React.forwardRef<

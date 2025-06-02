@@ -812,9 +812,12 @@ export default function BuildPage() {
         duration: newDrill.duration || 15,
         equipment: newDrill.equipment || [],
         participants: newDrill.players,
-        skill_level: newDrill.skillLevel || "All Levels", // Match the exact values from database constraint
-        type: newDrill.type || "Drills", // Match the exact values from database constraint
+        // Ensure skill_level is exactly one of the allowed values
+        skill_level: ["All Levels", "Beginner", "Intermediate", "Advanced"].includes(newDrill.skillLevel) 
+          ? newDrill.skillLevel 
+          : "All Levels", // Default to 'All Levels' if invalid value
         is_custom: true,
+        privacy_level: newDrill.privacy_level || "private", // Added privacy_level which exists in the schema
         video_url: newDrill.videoUrl,
         image_url: newDrill.imageUrl,
         objectives: newDrill.objectives || []

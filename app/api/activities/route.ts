@@ -7,19 +7,23 @@ export async function POST(request: Request) {
     const activityData = await request.json();
     const supabase = createRouteHandlerClient({ cookies });
     
+    // Extract tagClassification and any other UI-only fields
+    // These fields are used in the frontend but not stored in the database
+    const { tagClassification, ...dbSafeData } = activityData;
+    
     // Add required fields with defaults for testing
     const activityWithUser = {
-      ...activityData,
+      ...dbSafeData,
       // Required fields with defaults if not provided
-      title: activityData.title || 'Test Activity',
-      sport: activityData.sport || 'General',
-      description: activityData.description || 'Test description',
-      duration: activityData.duration || 30,
+      title: dbSafeData.title || 'Test Activity',
+      sport: dbSafeData.sport || 'General',
+      description: dbSafeData.description || 'Test description',
+      duration: dbSafeData.duration || 30,
       // Must be one of: 'All Levels', 'Beginner', 'Intermediate', 'Advanced'
-      skill_level: activityData.skill_level || 'All Levels',
+      skill_level: dbSafeData.skill_level || 'All Levels',
       // Handle the renamed field - map focus_area to activity_tagging if present
-      activity_tagging: activityData.activity_tagging || activityData.focus_area || '',
-      is_custom: activityData.is_custom !== undefined ? activityData.is_custom : true,
+      activity_tagging: dbSafeData.activity_tagging || dbSafeData.focus_area || '',
+      is_custom: dbSafeData.is_custom !== undefined ? dbSafeData.is_custom : true,
       // Using a fixed test UUID for user_id during development
       user_id: '00000000-0000-0000-0000-000000000000',
       // Timestamps

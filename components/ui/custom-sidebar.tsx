@@ -4,6 +4,8 @@ import { cn } from "@/lib/utils";
 import Link, { LinkProps } from "next/link";
 import React, { useState, createContext, useContext } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { supabase } from "@/lib/supabase"; // Added for user auth status
+import type { User } from "@supabase/supabase-js"; // Added for User type
 import { 
   Menu, 
   X,
@@ -16,6 +18,9 @@ import {
   LogIn,
   Settings,
   UserPlus,
+  UserCircle,
+  CheckCircle2, // Added for logged-in status
+  XCircle, // Added for not logged-in/loading status
 } from "lucide-react";
 
 interface Links {
@@ -98,6 +103,27 @@ export const DesktopSidebar = ({
   ...props
 }: React.ComponentProps<typeof motion.div>) => {
   const { open, setOpen, animate } = useSidebar();
+  const [currentUser, setCurrentUser] = React.useState<User | null>(null);
+  const [loadingUser, setLoadingUser] = React.useState(true);
+
+  React.useEffect(() => {
+    const fetchUserAndListen = async () => {
+      setLoadingUser(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUser(user);
+      setLoadingUser(false);
+
+      const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+        setCurrentUser(session?.user ?? null);
+      });
+
+      return () => {
+        authListener?.subscription.unsubscribe();
+      };
+    };
+
+    fetchUserAndListen();
+  }, []);
   return (
     <motion.div
       className={cn(
@@ -111,6 +137,25 @@ export const DesktopSidebar = ({
       onMouseLeave={() => setOpen(false)}
       {...props}
     >
+      <div style={{ padding: '10px 0', borderBottom: '1px solid hsl(var(--border))', marginBottom: '10px', fontSize: '0.875rem', color: 'white', display: 'flex', alignItems: 'center', justifyContent: open ? 'flex-start' : 'center' }}>
+        {open ? (
+          loadingUser ? (
+            <span>Loading user...</span>
+          ) : currentUser ? (
+            <span>Logged in: {currentUser.email}</span>
+          ) : (
+            <span>Not logged in</span>
+          )
+        ) : (
+          loadingUser ? (
+            <XCircle className="h-5 w-5 text-red-500" /> // Loading state with X
+          ) : currentUser ? (
+            <CheckCircle2 className="h-5 w-5 text-green-500" /> // Logged in with Check
+          ) : (
+            <XCircle className="h-5 w-5 text-red-500" /> // Not logged in with X
+          )
+        )}
+      </div>
       {children}
     </motion.div>
   );
@@ -122,6 +167,27 @@ export const MobileSidebar = ({
   ...props
 }: React.ComponentProps<"div">) => {
   const { open, setOpen } = useSidebar();
+  const [currentUser, setCurrentUser] = React.useState<User | null>(null);
+  const [loadingUser, setLoadingUser] = React.useState(true);
+
+  React.useEffect(() => {
+    const fetchUserAndListen = async () => {
+      setLoadingUser(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUser(user);
+      setLoadingUser(false);
+
+      const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+        setCurrentUser(session?.user ?? null);
+      });
+
+      return () => {
+        authListener?.subscription.unsubscribe();
+      };
+    };
+
+    fetchUserAndListen();
+  }, []);
   return (
     <>
       <div
@@ -157,7 +223,17 @@ export const MobileSidebar = ({
               >
                 <X />
               </div>
-              {children}
+              <div style={{ padding: '10px 0', borderBottom: '1px solid hsl(var(--border))', marginBottom: '10px', fontSize: '0.875rem', color: 'white' }}>
+                {loadingUser ? (
+                  <span>Loading user...</span>
+                ) : currentUser ? (
+                  <span>Logged in: {currentUser.email}</span>
+                ) : (
+                  <span>Not logged in</span>
+                )}
+              </div>
+              {/* Ensure children are correctly typed for motion.div */} 
+              {React.Children.toArray(children)}
             </motion.div>
           )}
         </AnimatePresence>
@@ -218,9 +294,7 @@ export const SidebarHeader = ({
       )}
       {...props}
     >
-      <div className="size-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold">
-        PS
-      </div>
+      {/* 'PS' logo removed */}
     </div>
   );
 };

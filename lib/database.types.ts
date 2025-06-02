@@ -9,6 +9,75 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
+      teams: {
+        Row: {
+          id: string
+          name: string
+          created_at: string
+          updated_at: string
+          created_by: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          created_at?: string
+          updated_at?: string
+          created_by: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          created_at?: string
+          updated_at?: string
+          created_by?: string
+        }
+      }
+      team_members: {
+        Row: {
+          id: string
+          team_id: string
+          user_id: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          team_id: string
+          user_id: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          team_id?: string
+          user_id?: string
+          created_at?: string
+        }
+      }
+      pending_invitations: {
+        Row: {
+          id: string
+          team_id: string
+          email: string
+          created_at: string
+          expires_at: string
+          invitation_token: string
+        }
+        Insert: {
+          id?: string
+          team_id: string
+          email: string
+          created_at?: string
+          expires_at?: string
+          invitation_token?: string
+        }
+        Update: {
+          id?: string
+          team_id?: string
+          email?: string
+          created_at?: string
+          expires_at?: string
+          invitation_token?: string
+        }
+      }
       drills: {
         Row: {
           id: string
@@ -31,6 +100,8 @@ export interface Database {
           variations: string | null
           tips: string | null
           is_custom: boolean
+          privacy_level: 'private' | 'team' | 'public'
+          team_id: string | null
         }
         Insert: {
           id?: string
@@ -54,6 +125,8 @@ export interface Database {
           variations?: string
           tips?: string
           is_custom?: boolean
+          privacy_level?: 'private' | 'team' | 'public'
+          team_id?: string | null
         }
         Update: {
           id?: string
@@ -77,6 +150,8 @@ export interface Database {
           variations?: string
           tips?: string
           is_custom?: boolean
+          privacy_level?: 'private' | 'team' | 'public'
+          team_id?: string | null
         }
       }
       training_plans: {
@@ -88,6 +163,8 @@ export interface Database {
           user_id: string
           sport: string
           duration: number
+          privacy_level: 'private' | 'team' | 'public'
+          team_id: string | null
         }
         Insert: {
           id?: string
@@ -97,6 +174,8 @@ export interface Database {
           user_id: string
           sport: string
           duration: number
+          privacy_level: 'private' | 'team' | 'public'
+          team_id: string | null
         }
         Update: {
           id?: string
@@ -106,6 +185,8 @@ export interface Database {
           user_id?: string
           sport?: string
           duration?: number
+          privacy_level?: 'private' | 'team' | 'public'
+          team_id?: string | null
         }
       }
       training_plan_items: {
