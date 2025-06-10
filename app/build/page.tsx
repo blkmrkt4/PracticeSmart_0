@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge"
 import { Slider } from "@/components/ui/slider"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
@@ -83,6 +84,8 @@ type PracticePlan = {
   drills: PracticeDrill[]
   createdAt: string
   lastModified: string
+  privacy_setting?: "public" | "private" | "team"
+  team_id?: string | null
 }
 
 // Drill types for quick filtering
@@ -375,6 +378,8 @@ const sampleSavedPlans: PracticePlan[] = [
     name: "Standard Training Session",
     sport: "soccer-football",
     duration: 90,
+    privacy_setting: "private",
+    team_id: null,
     drills: [
       {
         id: "pd-1",
@@ -466,6 +471,8 @@ const sampleSavedPlans: PracticePlan[] = [
     ],
     createdAt: "2023-10-20T14:15:00Z",
     lastModified: "2023-10-20T14:15:00Z",
+    privacy_setting: "private",
+    team_id: null,
   },
 ]
 
@@ -509,6 +516,7 @@ const activityTaggingOptions = [
 ]
 
 export default function BuildPage() {
+  const router = useRouter()
   // State
   const [selectedSport, setSelectedSport] = useState("soccer-football")
   const [practiceDuration, setPracticeDuration] = useState(90)
@@ -526,13 +534,26 @@ export default function BuildPage() {
     drills: [],
     createdAt: new Date().toISOString(),
     lastModified: new Date().toISOString(),
+    privacy_setting: "private",
+    team_id: null,
   })
   const [savedPlans, setSavedPlans] = useState<PracticePlan[]>(sampleSavedPlans)
   const [isEditingName, setIsEditingName] = useState(false)
   const [showSavedPlans, setShowSavedPlans] = useState(false)
+  
+  // Call fetchUserTeams and fetchUserTrainingPlans when showSavedPlans changes to true
+  useEffect(() => {
+    if (showSavedPlans) {
+      fetchUserTeams()
+      fetchUserTrainingPlans()
+    }
+  }, [showSavedPlans])
   const [showSaveDialog, setShowSaveDialog] = useState(false)
   const [showDurationDialog, setShowDurationDialog] = useState(false)
   const [customDuration, setCustomDuration] = useState(practiceDuration)
+  const [userTrainingPlans, setUserTrainingPlans] = useState<PracticePlan[]>([])
+  const [isLoadingUserPlans, setIsLoadingUserPlans] = useState(false)
+  const [fetchUserPlansError, setFetchUserPlansError] = useState<string | null>(null)
 
   // Handle client-side rendering for export link to prevent hydration errors
   useEffect(() => {
@@ -552,22 +573,83 @@ export default function BuildPage() {
     }
   }, [currentPlan.id])
   const [customDrills, setCustomDrills] = useState<Drill[]>([])
-  const [showNewDrillDialog, setShowNewDrillDialog] = useState(false)
   const [showDrillDetailDialog, setShowDrillDetailDialog] = useState(false)
+  const [userTeams, setUserTeams] = useState<any[]>([])
+  const [isLoadingTeams, setIsLoadingTeams] = useState(false)
+  const [planPrivacySetting, setPlanPrivacySetting] = useState<"public" | "private" | "team">("private")
+  const [planTeamId, setPlanTeamId] = useState<string | null>(null)
+  const [saveDialogPlanName, setSaveDialogPlanName] = useState("")
   const [selectedDrill, setSelectedDrill] = useState<Drill | null>(null)
-  const [newDrill, setNewDrill] = useState<Partial<Drill>>({
-    name: "",
-    description: "",
-    duration: 15,
-    activity_tagging: "passing",
-    skillLevel: "Intermediate",
-    players: "Any",
-    equipment: [],
-    sport: selectedSport,
-    objectives: [""],
-    isCustom: true,
-    tagClassification: "sport-specific"
-  })
+
+  const fetchUserTeams = async () => {
+    setIsLoadingTeams(true)
+    try {
+      const response = await fetch("/api/teams")
+      if (!response.ok) {
+        throw new Error("Failed to fetch teams")
+      }
+      const data = await response.json()
+      // The API returns { teams: [...] } structure
+      const teamsData = data.teams || []
+      console.log("Fetched teams:", teamsData)
+      setUserTeams(teamsData) 
+    } catch (error) {
+      console.error("Error fetching teams:", error)
+      toast({
+        title: "Error",
+        description: "Could not load your teams. Please try again.",
+        variant: "destructive",
+      })
+      setUserTeams([]) 
+    } finally {
+      setIsLoadingTeams(false)
+    }
+  }
+
+  const fetchUserTrainingPlans = async () => {
+    setIsLoadingUserPlans(true)
+    setFetchUserPlansError(null)
+    try {
+      const response = await fetch("/api/training-plans")
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Failed to fetch training plans")
+      }
+      const data = await response.json()
+      setUserTrainingPlans(data || []) // The API returns an array directly
+    } catch (error: any) {
+      console.error("Error fetching training plans:", error)
+      const errorMessage = error.message || "Could not load your training plans. Please try again."
+      setFetchUserPlansError(errorMessage)
+      toast({
+        title: "Error Loading Plans",
+        description: errorMessage,
+        variant: "destructive",
+      })
+      setUserTrainingPlans([])
+    } finally {
+      setIsLoadingUserPlans(false)
+    }
+  }
+
+  useEffect(() => {
+    if (showSaveDialog) {
+      setSaveDialogPlanName(currentPlan.name)
+      setPlanPrivacySetting(currentPlan.privacy_setting || "private");
+      setPlanTeamId(currentPlan.team_id || null);
+      if (userTeams.length === 0) { // Fetch teams only if not already loaded or if forced refresh needed
+        fetchUserTeams()
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showSaveDialog, currentPlan.name, currentPlan.privacy_setting, currentPlan.team_id, userTeams.length])
+
+  useEffect(() => {
+    if (showSavedPlans) {
+      fetchUserTrainingPlans()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showSavedPlans])
 
   // Save current plan to localStorage whenever it changes
   useEffect(() => {
@@ -636,6 +718,7 @@ export default function BuildPage() {
 
   // Calculate total duration of current plan
   const totalDuration = currentPlan.drills.reduce((total, drill) => total + drill.duration, 0)
+  const isPlanSaved = currentPlan.id && !currentPlan.id.startsWith('plan-');
 
   // Open drill detail dialog
   const openDrillDetail = (drill: Drill) => {
@@ -740,32 +823,68 @@ export default function BuildPage() {
     })
   }
 
-  // Save current plan
-  const savePlan = (name: string) => {
-    const planToSave: PracticePlan = {
-      ...currentPlan,
-      name,
-      lastModified: new Date().toISOString(),
+  // Save current plan to the database
+  const savePlan = async () => {
+    const payload = {
+      name: saveDialogPlanName,
+      sport: currentPlan.sport,
+      drills: currentPlan.drills,
+      privacy_setting: planPrivacySetting,
+      team_id: planPrivacySetting === "team" ? planTeamId : null,
+      duration: currentPlan.duration,
+    };
+
+    try {
+      const response = await fetch('/api/training-plans', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Failed to save plan: ${response.statusText}`);
+      }
+
+      const savedPlanFromDB: PracticePlan = await response.json();
+
+      // Update currentPlan with the data returned from the DB (includes new ID, timestamps, etc.)
+      setCurrentPlan(savedPlanFromDB);
+      
+      // The local 'savedPlans' state and localStorage logic previously here is removed.
+      // The database is now the source of truth.
+      // If you need to update a local list of plans for UI purposes (e.g., 'My Plans' list),
+      // you would typically re-fetch the list or add/update savedPlanFromDB in that list.
+
+      setShowSaveDialog(false);
+
+      toast({
+        title: "Plan Saved to Database",
+        description: `${savedPlanFromDB.name} has been saved successfully.`,
+      });
+
+    } catch (error: any) {
+      console.error("Full error object saving plan:", error);
+      let errorMessage = "An unexpected error occurred.";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      // If the error object has more details, like from a JSON response
+      if (error.response && typeof error.response.data?.error === 'string') {
+        errorMessage = error.response.data.error;
+      } else if (typeof error.error === 'string') { // If error structure is { error: 'message' }
+        errorMessage = error.error;
+      }
+
+      toast({
+        title: "Error Saving Plan",
+        description: `Details: ${errorMessage}`,
+        variant: "destructive",
+      });
     }
-
-    // Check if we're updating an existing plan
-    const existingPlanIndex = savedPlans.findIndex((p) => p.id === currentPlan.id)
-
-    if (existingPlanIndex >= 0) {
-      const updatedPlans = [...savedPlans]
-      updatedPlans[existingPlanIndex] = planToSave
-      setSavedPlans(updatedPlans)
-    } else {
-      setSavedPlans([...savedPlans, planToSave])
-    }
-
-    setShowSaveDialog(false)
-
-    toast({
-      title: "Plan Saved",
-      description: `${name} has been saved successfully`,
-    })
-  }
+  };
 
   // Load a saved plan
   const loadPlan = (plan: PracticePlan) => {
@@ -789,112 +908,6 @@ export default function BuildPage() {
     setShowSavedPlans(false)
   }
 
-  // Add new custom drill
-  const addNewDrill = async () => {
-    if (!newDrill.name || !newDrill.description) {
-      toast({
-        title: "Error",
-        description: "Name and description are required",
-        variant: "destructive",
-      })
-      return
-    }
-
-    try {
-      // Prepare data for submission to Supabase
-      const submissionData = {
-        title: newDrill.name,
-        sport: newDrill.sport || selectedSport,
-        activity_tagging: newDrill.activity_tagging,
-        description: newDrill.description,
-        setup_instructions: newDrill.setup,
-        coaching_points: newDrill.tips,
-        duration: newDrill.duration || 15,
-        equipment: newDrill.equipment || [],
-        participants: newDrill.players,
-        // Ensure skill_level is exactly one of the allowed values
-        skill_level: ["All Levels", "Beginner", "Intermediate", "Advanced"].includes(newDrill.skillLevel) 
-          ? newDrill.skillLevel 
-          : "All Levels", // Default to 'All Levels' if invalid value
-        is_custom: true,
-        privacy_level: newDrill.privacy_level || "private", // Added privacy_level which exists in the schema
-        video_url: newDrill.videoUrl,
-        image_url: newDrill.imageUrl,
-        objectives: newDrill.objectives || []
-      }
-
-      // Log the data being sent
-      console.log('Submitting activity data:', JSON.stringify(submissionData, null, 2));
-
-      // Save to Supabase using the same API endpoint
-      const response = await fetch('/api/activities', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(submissionData),
-      })
-
-      const result = await response.json()
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to create activity/drill')
-      }
-
-      // Also add to local state for immediate display
-      const customDrill: Drill = {
-        id: result.data.id || `custom-drill-${customDrills.length + 1}-${newDrill.name.toLowerCase().replace(/\s+/g, '-')}`,
-        name: newDrill.name || "",
-        description: newDrill.description || "",
-        duration: newDrill.duration || 15,
-        category: newDrill.category || "Other",
-        skillLevel: newDrill.skillLevel || "All Levels",
-        players: newDrill.players || "Any",
-        equipment: newDrill.equipment || [],
-        sport: newDrill.sport || selectedSport,
-        objectives: newDrill.objectives || [""],
-        type: newDrill.type || "Drills",
-        isCustom: true,
-        setup: newDrill.setup,
-        instructions: newDrill.instructions,
-        variations: newDrill.variations,
-        tips: newDrill.tips,
-        imageUrl: newDrill.imageUrl,
-        videoUrl: newDrill.videoUrl,
-      }
-
-      setCustomDrills([...customDrills, customDrill])
-      setShowNewDrillDialog(false)
-
-      // Reset new drill form
-      setNewDrill({
-        name: "",
-        description: "",
-        duration: 15,
-        category: "Passing",
-        skillLevel: "All Levels", // Match database constraint
-        players: "Any",
-        equipment: [],
-        sport: selectedSport,
-        objectives: [""],
-        type: "Drills", // Match database constraint
-        isCustom: true,
-      })
-
-      toast({
-        title: "Drill Created",
-        description: `${customDrill.name} has been added to your library and saved to database`,
-      })
-    } catch (error) {
-      console.error('Error creating activity:', error)
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : 'Failed to create activity',
-        variant: "destructive",
-      })
-    }
-  }
-
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Header */}
@@ -915,28 +928,7 @@ export default function BuildPage() {
 
           <div className="flex items-center gap-4">
             <div className="flex items-center">
-              {isEditingName ? (
-                <Input
-                  value={currentPlan.name}
-                  onChange={(e) => setCurrentPlan({ ...currentPlan, name: e.target.value })}
-                  onBlur={() => setIsEditingName(false)}
-                  onKeyDown={(e) => e.key === "Enter" && setIsEditingName(false)}
-                  className="h-8 w-48 bg-white/10 border-white/20 text-white"
-                  autoFocus
-                />
-              ) : (
-                <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-semibold text-white">{currentPlan.name}</h2>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 text-white/80 hover:text-white hover:bg-white/10"
-                    onClick={() => setIsEditingName(true)}
-                  >
-                    <Edit className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              )}
+              {/* Plan name and edit functionality moved to timeline section */}
             </div>
 
             <div className="flex items-center gap-2">
@@ -971,7 +963,6 @@ export default function BuildPage() {
                 Save
               </Button>
 
-              {/* Export link - client-side only to prevent hydration errors */}
               <div id="export-link-container">
                 {/* Will be replaced with actual link on client side */}
                 <Button size="sm" className="bg-white text-black hover:bg-white/90 font-medium opacity-70" disabled>
@@ -1055,11 +1046,11 @@ export default function BuildPage() {
                     </div>
                     <Button
                       size="sm"
-                      onClick={() => setShowNewDrillDialog(true)}
+                      onClick={() => router.push('/activities/new')}
                       className="bg-blue-600 hover:bg-blue-700 text-white"
                     >
-                      <Plus className="h-4 w-4 mr-1" />
-                      Create Activity/Drill
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Custom Drill
                     </Button>
                   </div>
                 </CardHeader>
@@ -1372,8 +1363,53 @@ export default function BuildPage() {
                   <CardDescription className="text-white/80">
                     Drag and drop to reorder drills in your plan
                   </CardDescription>
-                  {currentPlan.drills.length > 0 && (
-                    <div className="flex justify-end mt-2">
+                  <div className="flex justify-end items-center mt-2 gap-3">
+                    <div className="flex items-center gap-2 flex-wrap px-3 py-1.5 rounded-md border border-white/20 bg-white/5">
+                      {isEditingName ? (
+                        <Input
+                          value={currentPlan.name}
+                          onChange={(e) => setCurrentPlan({ ...currentPlan, name: e.target.value })}
+                          onBlur={() => setIsEditingName(false)}
+                          onKeyDown={(e) => e.key === "Enter" && setIsEditingName(false)}
+                          className="h-8 w-48 bg-white/10 border-white/20 text-white"
+                          autoFocus
+                        />
+                      ) : (
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h2 className="text-lg font-semibold text-white">{currentPlan.name}</h2>
+                          {isPlanSaved ? (
+                            <span className="ml-1 text-green-400">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="inline-block">
+                                <path d="M20 6L9 17l-5-5"/>
+                              </svg>
+                            </span>
+                          ) : (
+                            <span className="text-sm ml-1 text-yellow-400">
+                              (Unsaved)
+                            </span>
+                          )}
+                          {currentPlan.privacy_setting && (
+                            <Badge variant="outline" className="ml-2 text-xs border-white/30 bg-white/10 text-white/80">
+                              {currentPlan.privacy_setting.charAt(0).toUpperCase() + currentPlan.privacy_setting.slice(1)}
+                            </Badge>
+                          )}
+                          {currentPlan.privacy_setting === 'team' && currentPlan.team_id && (
+                            <Badge variant="outline" className="ml-1 text-xs border-blue-500/50 bg-blue-900/50 text-blue-300">
+                              Team ID: {currentPlan.team_id}
+                            </Badge>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 text-white/80 hover:text-white hover:bg-white/10"
+                            onClick={() => setIsEditingName(true)}
+                          >
+                            <Edit className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                    {currentPlan.drills.length > 0 && (
                       <Button
                         variant="outline"
                         size="sm"
@@ -1389,8 +1425,8 @@ export default function BuildPage() {
                       >
                         {allExpanded ? "Collapse All" : "Expand All"}
                       </Button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </CardHeader>
 
                 <CardContent>
@@ -1663,17 +1699,57 @@ export default function BuildPage() {
               <Label htmlFor="plan-name">Plan Name</Label>
               <Input
                 id="plan-name"
-                value={currentPlan.name}
-                onChange={(e) => setCurrentPlan({ ...currentPlan, name: e.target.value })}
+                value={saveDialogPlanName}
+                onChange={(e) => setSaveDialogPlanName(e.target.value)}
                 className="bg-white/10 border-white/20 text-white"
               />
             </div>
+            <div className="space-y-2">
+              <Label>Privacy</Label>
+              <RadioGroup value={planPrivacySetting} onValueChange={(value: "public" | "private" | "team") => setPlanPrivacySetting(value)} className="flex space-x-4">
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="private" id="rg-private" />
+                  <Label htmlFor="rg-private">Private</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="team" id="rg-team" />
+                  <Label htmlFor="rg-team">Team</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="public" id="rg-public" />
+                  <Label htmlFor="rg-public">Public</Label>
+                </div>
+              </RadioGroup>
+            </div>
+            {planPrivacySetting === "team" && (
+              <div className="space-y-2">
+                <Label htmlFor="plan-team">Team</Label>
+                <Select value={planTeamId || ""} onValueChange={setPlanTeamId} disabled={isLoadingTeams}>
+                  <SelectTrigger id="plan-team" className="bg-white/10 border-white/20 text-white">
+                    <SelectValue placeholder={isLoadingTeams ? "Loading teams..." : "Select a team"} />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-900 border-white/10 text-white">
+                    {isLoadingTeams ? (
+                      <SelectItem value="loading" disabled>Loading teams...</SelectItem>
+                    ) : userTeams.length > 0 ? (
+                      userTeams.map((team) => (
+                        <SelectItem key={team.id} value={team.id}>
+                          {team.name}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="no-teams" disabled>No teams found. Create one on the Teams page.</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowSaveDialog(false)} className="border-white/20 text-white hover:bg-white/20">
               Cancel
             </Button>
-            <Button onClick={() => savePlan(currentPlan.name)} className="bg-blue-600 hover:bg-blue-700 text-white">
+            <Button onClick={savePlan} className="bg-blue-600 hover:bg-blue-700 text-white" disabled={(planPrivacySetting === 'team' && !planTeamId && userTeams.length > 0) || isLoadingTeams}>
               Save Plan
             </Button>
           </DialogFooter>
@@ -1697,11 +1773,26 @@ export default function BuildPage() {
               </Button>
             </div>
             <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
-              {savedPlans.map((plan) => (
+              {isLoadingUserPlans ? (
+                <p className="text-center text-white/80 py-4">Loading your plans...</p>
+              ) : fetchUserPlansError ? (
+                <p className="text-center text-red-500 py-4">{fetchUserPlansError}</p>
+              ) : userTrainingPlans.length === 0 ? (
+                <p className="text-center text-white/80 py-4">No saved plans found. Click "Create New Plan" to get started!</p>
+              ) : (
+                userTrainingPlans.map((plan) => (
+
                 <Card key={plan.id} className="bg-gray-800 border-white/20 text-white">
                   <CardHeader className="py-3">
                     <div className="flex justify-between items-center">
-                      <CardTitle className="text-lg">{plan.name}</CardTitle>
+                      <div className="flex items-center gap-2">
+                        <CardTitle className="text-lg">{plan.name}</CardTitle>
+                        {plan.privacy_setting === 'team' && plan.team_id && (
+                          <div className="px-2 py-0.5 text-xs border border-blue-500/50 bg-blue-900/50 text-blue-300">
+                            {userTeams.find(team => team.id === plan.team_id)?.name || 'Team Plan'}
+                          </div>
+                        )}
+                      </div>
                       <Badge variant="outline" className="bg-blue-600/20 text-blue-100 border-blue-500/30">
                         {plan.sport.charAt(0).toUpperCase() + plan.sport.slice(1)}
                       </Badge>
@@ -1711,6 +1802,13 @@ export default function BuildPage() {
                     <div className="flex justify-between text-sm text-white/80">
                       <div>Duration: {plan.drills.reduce((total, drill) => total + drill.duration, 0)} min</div>
                       <div>Drills: {plan.drills.length}</div>
+                    </div>
+                    <div className="flex items-center gap-2 mt-1">
+                      {plan.privacy_setting && (
+                        <Badge variant="outline" className="text-xs border-white/30 bg-white/10 text-white/80">
+                          {plan.privacy_setting.charAt(0).toUpperCase() + plan.privacy_setting.slice(1)}
+                        </Badge>
+                      )}
                     </div>
                     <div className="mt-2 flex flex-wrap gap-1">
                       {plan.drills.slice(0, 3).map((drill) => (
@@ -1730,22 +1828,26 @@ export default function BuildPage() {
                     </div>
                   </CardContent>
                   <CardFooter className="pt-0 pb-3">
-                    <div className="flex justify-between items-center w-full">
-                      <div className="text-xs text-white/70">
-                        Last modified: {new Date(plan.lastModified).toLocaleDateString()}
+                    <div className="flex flex-col w-full gap-2">
+                      <div className="flex justify-between items-center w-full">
+                        <div className="text-xs text-white/70">
+                          Last modified: {new Date(plan.lastModified).toLocaleDateString()}
+                        </div>
+                        {/* TODO: Add Edit Access button here later */}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="border-white/20 hover:bg-white/10 text-white"
+                          onClick={() => loadPlan(plan)}
+                        >
+                          Load Plan
+                        </Button>
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="border-white/20 hover:bg-white/10 text-white"
-                        onClick={() => loadPlan(plan)}
-                      >
-                        Load Plan
-                      </Button>
                     </div>
                   </CardFooter>
                 </Card>
-              ))}
+              ))
+            )}
             </div>
           </div>
         </DialogContent>
@@ -1978,266 +2080,6 @@ export default function BuildPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* New Drill Dialog */}
-      <Dialog open={showNewDrillDialog} onOpenChange={setShowNewDrillDialog}>
-        <DialogContent className="bg-gray-900 border-white/20 text-white max-w-4xl max-h-[90vh] overflow-hidden">
-          <DialogHeader>
-            <DialogTitle>Create New Activity/Drill</DialogTitle>
-            <DialogDescription className="text-white/80">Add a custom activity or drill to your personal library</DialogDescription>
-          </DialogHeader>
-
-          <ScrollArea className="max-h-[calc(90vh-180px)]">
-            <div className="py-4 space-y-6">
-              {/* Basic Information */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="activity-name" className="text-white">Activity Name</Label>
-                  <Input
-                    id="activity-name"
-                    value={newDrill.name}
-                    onChange={(e) => setNewDrill({ ...newDrill, name: e.target.value })}
-                    className="bg-white/10 border-white/20 text-white"
-                    placeholder="e.g., Advanced Passing Drill"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="activity-duration" className="text-white">Duration (minutes)</Label>
-                  <Input
-                    id="activity-duration"
-                    type="number"
-                    value={newDrill.duration}
-                    onChange={(e) => setNewDrill({ ...newDrill, duration: Number(e.target.value) })}
-                    className="bg-white/10 border-white/20 text-white"
-                    placeholder="15"
-                  />
-                </div>
-              </div>
-
-              {/* Sport and Activity Tagging */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="activity-sport" className="text-white">Sport or Activity</Label>
-                  <SportsActivitiesSelect
-                    value={newDrill.sport || ""}
-                    onValueChange={(value) => setNewDrill({ ...newDrill, sport: value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="activity-tagging" className="text-white">Activity Tagging</Label>
-                  <Select
-                    value={newDrill.activity_tagging}
-                    onValueChange={(value) => setNewDrill({ ...newDrill, activity_tagging: value })}
-                  >
-                    <SelectTrigger id="activity-focus" className="bg-white/10 border-white/20 text-white">
-                      <SelectValue placeholder="Select activity tagging" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-gray-900 border-white/20 text-white">
-                      {activityTaggingOptions
-                        .filter((tag: string) => tag !== "All")
-                        .map((tag: string) => (
-                          <SelectItem key={tag} value={tag.toLowerCase()}>
-                            {tag}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {/* Skill Level and Tag Classification */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="activity-skill" className="text-white">Skill Level</Label>
-                  <Select
-                    value={newDrill.skillLevel}
-                    onValueChange={(value) => setNewDrill({ ...newDrill, skillLevel: value })}
-                  >
-                    <SelectTrigger id="activity-skill" className="bg-white/10 border-white/20 text-white">
-                      <SelectValue placeholder="Select skill level" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-gray-900 border-white/20 text-white">
-                      <SelectItem value="beginner">Beginner</SelectItem>
-                      <SelectItem value="intermediate">Intermediate</SelectItem>
-                      <SelectItem value="advanced">Advanced</SelectItem>
-                      <SelectItem value="all">All Levels</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="activity-classification" className="text-white">Tag Classification</Label>
-                  <Select
-                    value={newDrill.tagClassification}
-                    onValueChange={(value: "sport-specific" | "selective-universal" | "universal") => 
-                      setNewDrill({ ...newDrill, tagClassification: value })
-                    }
-                  >
-                    <SelectTrigger 
-                      id="activity-classification" 
-                      className="bg-white/10 border-white/20 text-white"
-                    >
-                      <SelectValue placeholder="Select tag classification" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-gray-900 border-white/20 text-white">
-                      <SelectItem value="sport-specific">
-                        <div className="flex items-center">
-                          <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
-                          <span>Sport-Specific (Red)</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="selective-universal">
-                        <div className="flex items-center">
-                          <div className="w-3 h-3 rounded-full bg-yellow-500 mr-2"></div>
-                          <span>Selective Universal (Yellow)</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="universal">
-                        <div className="flex items-center">
-                          <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
-                          <span>Universal (Green)</span>
-                        </div>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-white/60 mt-1">
-                    <span className="font-medium">Red:</span> Sport-specific activities<br/>
-                    <span className="font-medium">Yellow:</span> Cross-sport with selective applicability<br/>
-                    <span className="font-medium">Green:</span> Universal activities for all sports
-                  </p>
-                </div>
-              </div>
-
-              {/* Description */}
-              <div className="space-y-2">
-                <Label htmlFor="activity-description" className="text-white">Description</Label>
-                <textarea
-                  id="activity-description"
-                  value={newDrill.description}
-                  onChange={(e) => setNewDrill({ ...newDrill, description: e.target.value })}
-                  className="w-full h-32 bg-white/10 border-white/20 text-white rounded-md p-2 placeholder:text-white/50"
-                  placeholder="Describe the activity and its objectives..."
-                />
-              </div>
-
-              {/* Video URL */}
-              <div className="space-y-2">
-                <Label htmlFor="activity-video" className="text-white">Video URL</Label>
-                <Input
-                  id="activity-video"
-                  value={newDrill.videoUrl || ""}
-                  onChange={(e) => setNewDrill({ ...newDrill, videoUrl: e.target.value })}
-                  className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
-                  placeholder="e.g., YouTube or Vimeo URL"
-                />
-              </div>
-
-              {/* Illustration or Court Diagram */}
-              <div className="space-y-2">
-                <Label className="text-white">Illustration or Court Diagram</Label>
-                <div
-                  className="border-2 border-dashed border-white/20 rounded-md p-8 text-center hover:bg-white/5 transition-colors cursor-pointer"
-                >
-                  <div className="flex flex-col items-center justify-center gap-2">
-                    <Upload className="h-8 w-8 text-white/50" />
-                    <p className="text-white/70">Drag and drop an image, or click to select</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Additional fields */}
-              <div className="space-y-2">
-                <Label htmlFor="activity-players" className="text-white">Players</Label>
-                <Input
-                  id="activity-players"
-                  value={newDrill.players}
-                  onChange={(e) => setNewDrill({ ...newDrill, players: e.target.value })}
-                  className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
-                  placeholder="e.g., 6+, Any, 8-12"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-white">Equipment (comma separated)</Label>
-                <Input
-                  value={newDrill.equipment?.join(", ") || ""}
-                  onChange={(e) =>
-                    setNewDrill({
-                      ...newDrill,
-                      equipment: e.target.value
-                        .split(",")
-                        .map((item) => item.trim())
-                        .filter(Boolean),
-                    })
-                  }
-                  className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
-                  placeholder="e.g., Balls, Cones, Goals"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-white">Objectives (comma separated)</Label>
-                <Input
-                  value={newDrill.objectives?.join(", ") || ""}
-                  onChange={(e) =>
-                    setNewDrill({
-                      ...newDrill,
-                      objectives: e.target.value
-                        .split(",")
-                        .map((item) => item.trim())
-                        .filter(Boolean),
-                    })
-                  }
-                  className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
-                  placeholder="e.g., Improve passing, Enhance teamwork"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="activity-setup" className="text-white">Setup Instructions</Label>
-                <textarea
-                  id="activity-setup"
-                  value={newDrill.setup || ""}
-                  onChange={(e) => setNewDrill({ ...newDrill, setup: e.target.value })}
-                  className="w-full h-20 bg-white/10 border-white/20 text-white rounded-md p-2 placeholder:text-white/50"
-                  placeholder="Describe how to set up the activity..."
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="activity-instructions" className="text-white">Instructions</Label>
-                <textarea
-                  id="activity-instructions"
-                  value={newDrill.instructions || ""}
-                  onChange={(e) => setNewDrill({ ...newDrill, instructions: e.target.value })}
-                  className="w-full h-32 bg-white/10 border-white/20 text-white rounded-md p-2 placeholder:text-white/50"
-                  placeholder="Step-by-step instructions for running the activity..."
-                />
-              </div>
-            </div>
-          </ScrollArea>
-
-          <DialogFooter>
-            <div className="flex justify-between w-full">
-              <Button
-                variant="outline"
-                className="border-white/20 text-white hover:bg-white/20"
-                onClick={() => setShowNewDrillDialog(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-                onClick={addNewDrill}
-                disabled={!newDrill.name || !newDrill.description}
-              >
-                Create Activity/Drill
-              </Button>
-            </div>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }
-

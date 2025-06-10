@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
       return { ...team, memberCount: count || 0 };
     }));
 
-    return NextResponse.json(teamsWithCounts);
+    return NextResponse.json({ teams: teamsWithCounts }); // Wrap response in { teams: ... }
   } catch (error: any) {
     console.error('Error fetching teams:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });

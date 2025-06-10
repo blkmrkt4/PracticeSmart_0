@@ -13,9 +13,6 @@ import {
   secondaryNavLinks
 } from '@/components/ui/custom-sidebar';
 import { Toaster } from "@/components/ui/toaster";
-// Metadata is exported from metadata.ts
-
-// Metadata is exported from metadata.ts
 
 export default function RootLayout({
   children,
@@ -26,7 +23,7 @@ export default function RootLayout({
   const isLandingPage = pathname === '/';
 
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <body>
         {isLandingPage ? (
           children
@@ -63,7 +60,7 @@ export default function RootLayout({
                 </div>
                 
                 <SidebarFooter>
-                  &copy; {new Date().getFullYear()} PracticeSmart
+                  © {new Date().getFullYear()} PracticeSmart
                 </SidebarFooter>
               </SidebarBody>
               
@@ -77,5 +74,5 @@ export default function RootLayout({
         <Toaster />
       </body>
     </html>
-  )
+  );
 }

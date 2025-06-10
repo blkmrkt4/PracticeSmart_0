@@ -39,11 +39,7 @@ type Team = {
   updated_at: string | null;
   created_by: string;
   memberCount?: number;
-  members?: Array<{
-    id: string;
-    name: string | null;
-    email: string | null;
-  }>;
+  members?: TeamMember[];
 };
 
 // Helper to format date strings
@@ -88,14 +84,10 @@ export default function TeamsPage() {
   const [assignSelectedTeams, setAssignSelectedTeams] = useState<string[]>([]);
   const [assignLoading, setAssignLoading] = useState(false);
   
-  // Team dialogs state
+  // Delete team dialog state
   const [isDeleteTeamDialogOpen, setIsDeleteTeamDialogOpen] = useState(false);
-  const [isEditTeamDialogOpen, setIsEditTeamDialogOpen] = useState(false);
-  const [teamToEdit, setTeamToEdit] = useState<Team | null>(null);
   const [teamToDelete, setTeamToDelete] = useState<Team | null>(null);
   const [isDeletingTeam, setIsDeletingTeam] = useState(false);
-  const [editingTeamMembers, setEditingTeamMembers] = useState<User[]>([]);
-  const [isLoadingTeamMembers, setIsLoadingTeamMembers] = useState(false);
 
   // Fetch Users
   const fetchUsers = useCallback(async () => {
@@ -133,7 +125,7 @@ export default function TeamsPage() {
         throw new Error(errorData.error || 'Failed to fetch teams');
       }
       const data = await response.json();
-      setTeams(data.teams || []);
+      setTeams(data || []);
     } catch (err: any) {
       console.error('Error fetching teams:', err);
       setErrorTeams(err.message);
@@ -151,14 +143,14 @@ export default function TeamsPage() {
   const handleOpenAssignDialog = (user: User) => {
     setAssignDialogUser(user);
     // Pre-select teams the user is already a member of
-    setAssignSelectedTeams(user.teams?.map(team => team.id) || []);
-    setIsAssignDialogOpen(true);
+    const userTeamIds = user.teams.map(team => team.id);
+    setAssignSelectedTeams(userTeamIds);
   };
 
   // Close dialog
   const handleCloseAssignDialog = () => {
-    setIsAssignDialogOpen(false);
     setAssignDialogUser(null);
+    setAssignSelectedTeams([]);
   };
 
   // Handle team selection change
@@ -168,81 +160,13 @@ export default function TeamsPage() {
     );
   };
 
-  // Open edit team dialog
-  const handleOpenEditTeamDialog = async (team: Team) => {
-    setTeamToEdit(team);
-    setIsLoadingTeamMembers(true);
-    
-    try {
-      // Fetch team members
-      const response = await fetch(`/api/teams/${team.id}/members`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch team members');
-      }
-      const members = await response.json();
-      setEditingTeamMembers(members);
-      setIsEditTeamDialogOpen(true);
-    } catch (err: any) {
-      toast({
-        title: "Error",
-        description: err.message,
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoadingTeamMembers(false);
-    }
-  };
-
-  // Close edit team dialog
-  const handleCloseEditTeamDialog = () => {
-    setIsEditTeamDialogOpen(false);
-    setTeamToEdit(null);
-    setEditingTeamMembers([]);
-  };
-
-  // Save team members
-  const handleSaveTeamMembers = async () => {
-    if (!teamToEdit) return;
-
-    const payload = { memberIds: editingTeamMembers.map(member => member.id) };
-    console.log('Saving team members. Team ID:', teamToEdit.id, 'Payload:', payload);
-
-    
-    try {
-      const response = await fetch(`/api/teams/${teamToEdit.id}/members`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to update team members');
-      }
-
-      toast({
-        title: "Team Updated",
-        description: `Team "${teamToEdit.name}" has been updated.`
-      });
-      
-      fetchTeams(); // Refresh teams list
-      fetchUsers();  // Refresh users list
-      handleCloseEditTeamDialog();
-    } catch (err: any) {
-      toast({
-        title: "Error",
-        description: err.message,
-        variant: "destructive"
-      });
-    }
-  };
-
   // Submit assignment
   const handleAssignTeams = async () => {
     if (!assignDialogUser) return;
     setAssignLoading(true);
     
     try {
+      // For each selected team, add the user
       for (const teamId of assignSelectedTeams) {
         const response = await fetch('/api/teams/members', {
           method: 'POST',
@@ -261,16 +185,18 @@ export default function TeamsPage() {
       
       toast({
         title: "Teams Updated",
-        description: `User ${assignDialogUser.name || assignDialogUser.email} has been assigned to the selected teams.`
+        description: `User ${assignDialogUser.name || assignDialogUser.email} has been assigned to the selected teams.`,
       });
       
+      // Refresh users to show updated team memberships
       await fetchUsers();
       handleCloseAssignDialog();
     } catch (err: any) {
+      console.error('Error assigning teams:', err);
       toast({
         title: "Error Assigning Teams",
         description: err.message,
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setAssignLoading(false);
@@ -282,47 +208,30 @@ export default function TeamsPage() {
     e.preventDefault();
     if (!newUserEmail.trim()) {
       toast({
-        title: "Error",
-        description: "Email is required",
-        variant: "destructive"
+        title: "Validation Error",
+        description: "Email is required.",
+        variant: "destructive",
       });
       return;
     }
-
     setIsCreatingUser(true);
-    
     try {
       const response = await fetch('/api/users', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: newUserEmail.trim(),
-          name: newUserName.trim() || null,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: newUserEmail, name: newUserName }),
       });
-
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create user');
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to create user');
       }
-
-      toast({
-        title: "User Created",
-        description: `User ${newUserName || newUserEmail} has been created successfully.`
-      });
-
+      toast({ title: 'Success', description: 'User created.' });
+      setIsCreateUserDialogOpen(false);
       setNewUserEmail("");
       setNewUserName("");
-      setIsCreateUserDialogOpen(false);
-      fetchUsers();
+      await fetchUsers();
     } catch (err: any) {
-      toast({
-        title: "Error Creating User",
-        description: err.message,
-        variant: "destructive"
-      });
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
     } finally {
       setIsCreatingUser(false);
     }
@@ -330,30 +239,19 @@ export default function TeamsPage() {
 
   // Delete User
   const handleDeleteUser = async (userId: string) => {
-    if (!confirm("Are you sure you want to delete this user?")) return;
-    
+    if (!confirm('Are you sure you want to delete this user?')) return;
     try {
       const response = await fetch(`/api/users/${userId}`, {
         method: 'DELETE',
       });
-
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to delete user');
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to delete user');
       }
-
-      toast({
-        title: "User Deleted",
-        description: "User has been deleted successfully."
-      });
-      
-      fetchUsers();
+      toast({ title: 'Success', description: 'User deleted.' });
+      await fetchUsers();
     } catch (err: any) {
-      toast({
-        title: "Error Deleting User",
-        description: err.message,
-        variant: "destructive"
-      });
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
     }
   };
 
@@ -364,37 +262,37 @@ export default function TeamsPage() {
   };
 
   const handleCloseDeleteTeamDialog = () => {
-    setIsDeleteTeamDialogOpen(false);
     setTeamToDelete(null);
+    setIsDeleteTeamDialogOpen(false);
   };
 
   const handleConfirmDeleteTeam = async () => {
     if (!teamToDelete) return;
     setIsDeletingTeam(true);
-    
     try {
       const response = await fetch(`/api/teams/${teamToDelete.id}`, {
         method: 'DELETE',
       });
-
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to delete team');
+        // Check for specific 409 conflict status from our API
+        if (response.status === 409) {
+            toast({
+                title: 'Deletion Blocked',
+                description: errorData.error || 'This team is referenced by other data (e.g., activities) and cannot be deleted yet.',
+                variant: 'destructive',
+                duration: 7000, // Longer duration for important messages
+            });
+        } else {
+            throw new Error(errorData.error || 'Failed to delete team');
+        }
+      } else {
+        toast({ title: 'Success', description: `Team "${teamToDelete.name}" deleted.` });
+        fetchTeams(); // Refresh team list
+        handleCloseDeleteTeamDialog();
       }
-
-      toast({
-        title: "Team Deleted",
-        description: `Team "${teamToDelete.name}" has been deleted successfully.`
-      });
-      
-      fetchTeams();
-      handleCloseDeleteTeamDialog();
     } catch (err: any) {
-      toast({
-        title: "Error Deleting Team",
-        description: err.message,
-        variant: "destructive"
-      });
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
     } finally {
       setIsDeletingTeam(false);
     }
@@ -405,40 +303,35 @@ export default function TeamsPage() {
     e.preventDefault();
     if (!newTeamName.trim()) {
       toast({
-        title: "Error",
-        description: "Team name is required",
+        title: "Validation Error",
+        description: "Team name cannot be empty.",
         variant: "destructive"
       });
       return;
     }
-
     setIsCreatingTeam(true);
-    
     try {
       const response = await fetch('/api/teams', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: newTeamName.trim(),
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newTeamName })
       });
-
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to create team');
       }
-
+      const newTeamData = await response.json();
+      const newTeamWithCount = { ...newTeamData, memberCount: 1 };
+      setTeams(prev => [...prev, newTeamWithCount]);
       toast({
         title: "Team Created",
-        description: `Team "${newTeamName}" has been created successfully.`
+        description: `Team "${newTeamName}" has been successfully created.`
       });
-
       setNewTeamName("");
       setIsCreateTeamDialogOpen(false);
-      fetchTeams();
+      // fetchTeams(); 
     } catch (err: any) {
+      console.error('Error creating team:', err);
       toast({
         title: "Error Creating Team",
         description: err.message || "An unexpected error occurred while creating team.",
@@ -474,36 +367,25 @@ export default function TeamsPage() {
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <div className="flex items-center">
                 <Users className="h-6 w-6 mr-2 text-primary" />
-                <div>
-                  <CardTitle>Users</CardTitle>
-                  <CardDescription>Manage individual users</CardDescription>
-                </div>
+                <CardTitle className="text-2xl font-semibold">Users</CardTitle>
               </div>
-              <Button 
-                onClick={() => setIsCreateUserDialogOpen(true)}
-                className="ml-auto"
-              >
-                <UserPlus className="h-4 w-4 mr-2" />
-                Create User
+              <Button onClick={() => setIsCreateUserDialogOpen(true)} size="sm">
+                <UserPlus className="mr-2 h-4 w-4" /> Create User
               </Button>
             </CardHeader>
-            <CardContent className="flex-grow overflow-hidden flex flex-col pt-6">
-            {loadingUsers && (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <span className="ml-3 text-primary font-medium">Loading users...</span>
-              </div>
-            )}
-            {errorUsers && (
-              <div className="flex items-center justify-center py-8 text-destructive">
-                <AlertTriangle className="h-6 w-6 mr-2" />
-                <div>
-                  <p className="font-medium">Error loading users</p>
-                  <p className="text-sm text-muted-foreground">{errorUsers}</p>
-                  <Button variant="outline" size="sm" className="mt-2" onClick={fetchUsers}>
-                    Retry
-                  </Button>
+            <CardContent className="flex-grow overflow-y-auto pt-4">
+              {loadingUsers && (
+                <div className="flex justify-center items-center py-4">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
+              )}
+
+            {errorUsers && (
+              <div className="flex flex-col items-center justify-center py-4 text-destructive">
+                <AlertTriangle className="h-8 w-8 mb-2" />
+                <p className="font-semibold">Error loading users</p>
+                <p className="text-sm">{errorUsers}</p>
+                <Button onClick={fetchUsers} variant="outline" size="sm" className="mt-2">Retry</Button>
               </div>
             )}
             {!loadingUsers && !errorUsers && users.length === 0 && (
@@ -512,34 +394,23 @@ export default function TeamsPage() {
             {!loadingUsers && !errorUsers && users.length > 0 && (
               <ul className="space-y-4">
                 {users.map((user: User) => (
-                  <li key={user.id} className="flex items-center justify-between p-3 bg-card/60 rounded-md border-2 border-border/90 hover:bg-card/90 transition-colors group shadow-sm">
-                    <div className="flex flex-col">
-                      <span className="font-medium text-foreground">{user.name || 'No Name'}</span>
-                      <span className="text-sm text-muted-foreground">{user.email}</span>
-                      <span className="text-xs text-muted-foreground/70 mt-1">
-                        Added: {formatDate(user.created_at)}
-                      </span>
-                      {user.teams && user.teams.length > 0 && (
-                        <div className="mt-2 flex flex-wrap gap-1">
-                          {user.teams.map(team => (
-                            <span key={team.id} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary/20 text-primary">
-                              {team.name}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex space-x-2 group-hover:opacity-100 transition-opacity">
+                  <li key={user.id} className="flex flex-col p-4 border-2 border-gray-700 rounded-lg bg-card/80 hover:bg-muted/60 transition-all shadow-sm hover:shadow-md hover:border-gray-600 h-full">
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold truncate">{user.name || 'Unnamed User'}</p>
+                        <p className="text-sm text-muted-foreground truncate">{user.email}</p>
+                      </div>
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
+                            <Button
+                              variant="destructive"
+                              size="icon"
                               onClick={() => handleDeleteUser(user.id)}
-                              className="h-8 w-8 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
+                              className="h-8 w-8" // Consistent small icon button size
                             >
                               <Trash2 className="h-4 w-4" />
+                              <span className="sr-only">Delete User</span>
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>
@@ -547,16 +418,22 @@ export default function TeamsPage() {
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
-                      
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={() => handleOpenAssignDialog(user)}
-                        className="h-8 w-8 text-primary hover:text-primary/90 hover:bg-primary/10"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
                     </div>
+                    <div className="mt-2 pt-2 border-t flex justify-between items-center">
+                      <div>
+                        <p className="text-xs text-muted-foreground">
+                          Teams: {user.teams.length > 0 
+                            ? user.teams.map((t: UserTeam) => t.name).join(', ') 
+                            : 'None'}
+                        </p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleOpenAssignDialog(user)}
+                      >
+                        Assign to Team
+                      </Button>
                   </li>
                 ))}
               </ul>
@@ -565,106 +442,58 @@ export default function TeamsPage() {
           </Card>
         </section>
 
-        {/* Teams Section */}
-        <section>
-          <Card className="h-full flex flex-col bg-card/70 border-gray-700 shadow-lg">
+        {/* Teams Section - Right Column */}
+        <section> {/* Changed div to section, grid handles sizing */}
+          <Card className="h-full flex flex-col bg-card/70 border-gray-700 shadow-lg"> {/* Consistent styling */}
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <div className="flex items-center">
-                <Building className="h-6 w-6 mr-2 text-primary" />
-                <div>
-                  <CardTitle>Teams</CardTitle>
-                  <CardDescription>Manage your teams</CardDescription>
-                </div>
+                <Building className="h-6 w-6 mr-2 text-primary" /> {/* Teams Icon */}
+                <CardTitle className="text-2xl font-semibold">Teams</CardTitle>
               </div>
-              <Button 
-                onClick={() => setIsCreateTeamDialogOpen(true)}
-                className="ml-auto"
-              >
-                <PlusCircle className="h-4 w-4 mr-2" />
-                New Team
+              <Button onClick={() => setIsCreateTeamDialogOpen(true)} size="sm">
+                <PlusCircle className="mr-2 h-4 w-4" /> Create Team
               </Button>
             </CardHeader>
-            <CardContent className="flex-grow overflow-hidden flex flex-col pt-6">
+            <CardContent className="flex-grow overflow-y-auto pt-4"> {/* Consistent padding */}
             {loadingTeams && (
-              <div className="flex items-center justify-center py-8">
+              <div className="flex items-center justify-center py-4 h-full">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <span className="ml-3 text-primary font-medium">Loading teams...</span>
+                <p className="ml-2">Loading teams...</p>
               </div>
             )}
             {errorTeams && (
-              <div className="flex items-center justify-center py-8 text-destructive">
-                <AlertTriangle className="h-6 w-6 mr-2" />
-                <div>
-                  <p className="font-medium">Error loading teams</p>
-                  <p className="text-sm text-muted-foreground">{errorTeams}</p>
-                  <Button variant="outline" size="sm" className="mt-2" onClick={fetchTeams}>
-                    Retry
-                  </Button>
-                </div>
+              <div className="flex flex-col items-center justify-center py-4 text-destructive h-full">
+                <AlertTriangle className="h-8 w-8 mb-2" />
+                <p className="font-semibold">Error loading teams</p>
+                <p className="text-sm">{errorTeams}</p>
+                <Button onClick={fetchTeams} variant="outline" size="sm" className="mt-2">Retry</Button>
               </div>
             )}
             {!loadingTeams && !errorTeams && teams.length === 0 && (
-              <p className="text-muted-foreground text-center py-4">No teams found. Create one to get started!</p>
+              <p className="text-muted-foreground text-center py-4 h-full flex items-center justify-center">No teams found. Create one to get started!</p>
             )}
             {!loadingTeams && !errorTeams && teams.length > 0 && (
               <ul className="space-y-4">
                 {teams.map((team: Team) => (
-                  <li key={team.id} className="flex items-center justify-between p-3 bg-card/60 rounded-md border-2 border-border/90 hover:bg-card/90 transition-colors group shadow-sm">
-                    <div className="flex flex-col">
-                      <span className="font-medium text-foreground">{team.name}</span>
-                      <span className="text-xs text-muted-foreground/70 mt-1">
-                        Created: {formatDate(team.created_at)}
-                      </span>
-                      <div className="mt-1">
-                        <div className="text-xs text-muted-foreground flex items-center gap-1 overflow-hidden">
-                          <span>Members: </span>
-                          <div className="flex-1 flex items-center overflow-hidden">
-                            {team.members && team.members.length > 0 ? (
-                              <>
-                                <span className="truncate">
-                                  {team.members.map(m => m.name || m.email).join(', ')}
-                                </span>
-                                {team.memberCount && team.memberCount > team.members.length && (
-                                  <span className="text-muted-foreground/70 ml-1">+{team.memberCount - team.members.length} more</span>
-                                )}
-                              </>
-                            ) : team.memberCount && team.memberCount > 0 ? (
-                              <span className="text-muted-foreground/80">{team.memberCount} member{team.memberCount === 1 ? '' : 's'}</span>
-                            ) : (
-                              <span className="text-muted-foreground/70">No members</span>
-                            )}
-                          </div>
-                        </div>
+                  <li key={team.id} className="flex flex-col p-4 border-2 border-gray-700 rounded-lg bg-card/80 hover:bg-muted/60 transition-all shadow-sm hover:shadow-md hover:border-gray-600 h-full">
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold truncate">{team.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {team.memberCount || 0} member{(team.memberCount || 0) !== 1 ? 's' : ''}
+                        </p>
                       </div>
-                    </div>
-                    <div className="flex space-x-2 group-hover:opacity-100 transition-opacity">
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button 
-                              variant="ghost" 
+                              variant="destructive" 
                               size="icon" 
-                              onClick={() => handleOpenEditTeamDialog(team)}
-                              className="h-8 w-8 text-primary hover:text-primary/90 hover:bg-primary/10"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Edit Team Members</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
+                              className="h-8 w-8"
                               onClick={() => handleOpenDeleteTeamDialog(team)}
-                              className="h-8 w-8 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
                             >
                               <Trash2 className="h-4 w-4" />
+                              <span className="sr-only">Delete Team</span>
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>
@@ -673,43 +502,73 @@ export default function TeamsPage() {
                         </Tooltip>
                       </TooltipProvider>
                     </div>
+                    <div className="mt-2 pt-2 border-t border-gray-700 flex-grow">
+                      <p className="text-xs text-muted-foreground">Created: {formatDate(team.created_at)}</p>
+                      {team.members && team.members.length > 0 && (
+                        <div className="mt-2">
+                          <p className="text-xs font-medium text-muted-foreground mb-1">Members:</p>
+                          <p className="text-sm text-muted-foreground">
+                            {team.members && team.members.slice(0, 3).map((m: TeamMember, i: number) => (
+                              <span key={i} className="block truncate">
+                                {m.name || m.email}
+                              </span>
+                            ))}
+                            {team.members.length > 3 && (
+                              <span className="text-muted-foreground/70">+{team.members.length - 3} more</span>
+                            )}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                    <div className="mt-auto pt-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                        onClick={() => {
+                          // TODO: Implement edit team functionality
+                          console.log('Edit team:', team.id);
+                        }}
+                      >
+                        Edit Team
+                      </Button>
+                    </div>
                   </li>
                 ))}
               </ul>
-            )}
+            {/* Empty state for the main team list is handled by the condition at line 463 */}
             </CardContent>
           </Card>
-        </section>
-      </div>
-
+        </section> {/* End of Teams Section */}
+      </div> {/* End of two-column grid div */}
       {/* Create User Dialog */}
       <Dialog open={isCreateUserDialogOpen} onOpenChange={setIsCreateUserDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Create New User</DialogTitle>
             <DialogDescription>
-              Add a new user to the system. They will be invited to join.
+              Enter the details for the new user.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="userName">Name (Optional)</Label>
+              <Label htmlFor="newUserName">Name</Label>
               <Input
-                id="userName"
+                id="newUserName"
                 value={newUserName}
                 onChange={(e) => setNewUserName(e.target.value)}
-                placeholder="John Doe"
+                placeholder="Full Name (Optional)"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="userEmail">Email</Label>
+              <Label htmlFor="newUserEmail">Email</Label>
               <Input
-                id="userEmail"
+                id="newUserEmail"
+                type="email"
                 value={newUserEmail}
                 onChange={(e) => setNewUserEmail(e.target.value)}
-                placeholder="john@example.com"
+                placeholder="user@example.com"
                 required
-                type="email"
               />
             </div>
           </div>
@@ -729,7 +588,7 @@ export default function TeamsPage() {
           <DialogHeader>
             <DialogTitle>Create New Team</DialogTitle>
             <DialogDescription>
-              Create a new team that users can be assigned to.
+              Enter the name for the new team.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -814,97 +673,6 @@ export default function TeamsPage() {
             <Button variant="destructive" onClick={handleConfirmDeleteTeam} disabled={isDeletingTeam}>
               {isDeletingTeam ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
               Delete Team
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Team Dialog */}
-      <Dialog open={isEditTeamDialogOpen} onOpenChange={setIsEditTeamDialogOpen}>
-        <DialogContent className="sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Edit Team: {teamToEdit?.name}</DialogTitle>
-            <DialogDescription>
-              Manage members of this team
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto">
-            {isLoadingTeamMembers ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin mr-2" />
-                <span>Loading team members...</span>
-              </div>
-            ) : (
-              <>
-                <div className="space-y-2">
-                  <Label>Team Members</Label>
-                  {editingTeamMembers.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No members in this team yet.</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {editingTeamMembers.map(user => (
-                        <div key={user.id} className="flex items-center justify-between p-2 border rounded">
-                          <div>
-                            <p className="font-medium">{user.name || 'No Name'}</p>
-                            <p className="text-sm text-muted-foreground">{user.email}</p>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setEditingTeamMembers(prev => 
-                              prev.filter(member => member.id !== user.id)
-                            )}
-                            className="text-destructive hover:text-destructive/90"
-                          >
-                            Remove
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                
-                <div className="space-y-2">
-                  <Label>Add Members</Label>
-                  <div className="space-y-2">
-                    {users
-                      .filter(user => !editingTeamMembers.some(member => member.id === user.id))
-                      .map(user => (
-                        <div key={user.id} className="flex items-center justify-between p-2 border rounded">
-                          <div>
-                            <p className="font-medium">{user.name || 'No Name'}</p>
-                            <p className="text-sm text-muted-foreground">{user.email}</p>
-                          </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setEditingTeamMembers(prev => [...prev, user])}
-                          >
-                            Add
-                          </Button>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={handleCloseEditTeamDialog}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleSaveTeamMembers}
-              disabled={isLoadingTeamMembers}
-            >
-              {isLoadingTeamMembers ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                'Save Changes'
-              )}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
@@ -46,6 +46,11 @@ const activityTaggingOptions = [
   "Cool Down"
 ]
 
+interface Team {
+  id: string;
+  name: string;
+}
+
 export default function NewActivityPage() {
   const [activity, setActivity] = useState({
     title: "",
@@ -61,12 +66,34 @@ export default function NewActivityPage() {
     participants: "",
     user_id: "", // Will be set from session
     skill_level: "All Levels",
-    tagClassification: "sport-specific" // Default tag classification
+    tagClassification: "sport-specific", // Default tag classification
+    privacy_setting: "private", // Added: private, public, team
+    team_id: null as string | null, // Added: ID of the selected team if privacy_setting is 'team'
   })
 
+  const [userTeams, setUserTeams] = useState<Team[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+
+  useEffect(() => {
+    // Fetch user's teams to populate the team selection dropdown
+    const fetchUserTeams = async () => {
+      try {
+        // TODO: Replace with actual API call and authentication
+        const response = await fetch('/api/teams'); // Assuming an endpoint to get user's teams
+        if (!response.ok) {
+          throw new Error('Failed to fetch teams');
+        }
+        const teamsData = await response.json();
+        setUserTeams(teamsData.teams || []); // Adjust based on your API response structure
+      } catch (err) {
+        console.error("Error fetching teams:", err);
+        setError('Failed to load your teams. Please try again later.');
+      }
+    };
+    fetchUserTeams();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -140,7 +167,9 @@ export default function NewActivityPage() {
         participants: "",
         user_id: "",
         skill_level: "All Levels",
-        tagClassification: activity.tagClassification // Keep the same tag classification
+        tagClassification: activity.tagClassification, // Keep the same tag classification
+        privacy_setting: "private",
+        team_id: null,
       })
       
       // Reset success message after 3 seconds and redirect to homepage
@@ -229,12 +258,8 @@ export default function NewActivityPage() {
                 {/* Sport and Activity Tagging */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="sport" className="text-white">Sport or Activity</Label>
-                    <SportsActivitiesSelect
-                      value={activity.sport}
-                      onValueChange={(value) => setActivity({ ...activity, sport: value })}
-                      placeholder="Select a sport or activity"
-                    />
+                    <Label htmlFor="sport" className="text-white">Sport</Label>
+                    <SportsActivitiesSelect value={activity.sport} onValueChange={(value: string) => setActivity({ ...activity, sport: value })} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="activityTagging" className="text-white">Activity Tagging</Label>
@@ -246,7 +271,7 @@ export default function NewActivityPage() {
                       <SelectTrigger id="activityTagging" className="bg-white/10 border-white/20 text-white">
                         <SelectValue placeholder="Select activity tagging" />
                       </SelectTrigger>
-                      <SelectContent className="bg-gray-900 border-white/20 text-white">
+                      <SelectContent className="bg-neutral-800 text-white border-neutral-700">
                         {activityTaggingOptions.map((tag) => (
                           <SelectItem key={tag} value={tag.toLowerCase()}>
                             {tag}
@@ -257,24 +282,8 @@ export default function NewActivityPage() {
                   </div>
                 </div>
 
+                {/* Grid for Tag Classification & Skill Level */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="skillLevel" className="text-white">Skill Level</Label>
-                    <Select
-                      value={activity.skill_level}
-                      onValueChange={(value) => setActivity({ ...activity, skill_level: value })}
-                    >
-                      <SelectTrigger id="skillLevel" className="bg-white/10 border-white/20 text-white">
-                        <SelectValue placeholder="Select skill level" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-gray-900 border-white/20 text-white">
-                        <SelectItem value="All Levels">All Levels</SelectItem>
-                        <SelectItem value="Beginner">Beginner</SelectItem>
-                        <SelectItem value="Intermediate">Intermediate</SelectItem>
-                        <SelectItem value="Advanced">Advanced</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
                   <div className="space-y-2">
                     <Label htmlFor="tagClassification" className="text-white">Tag Classification</Label>
                     <Select
@@ -284,29 +293,89 @@ export default function NewActivityPage() {
                       <SelectTrigger id="tagClassification" className="bg-white/10 border-white/20 text-white">
                         <SelectValue placeholder="Select tag classification" />
                       </SelectTrigger>
-                      <SelectContent className="bg-gray-900 border-white/20 text-white">
-                        <SelectItem value="sport-specific">
-                          <div className="flex items-center">
-                            <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
-                            <span>Sport-Specific (Red)</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="selective-universal">
-                          <div className="flex items-center">
-                            <div className="w-3 h-3 rounded-full bg-yellow-500 mr-2"></div>
-                            <span>Selective Universal (Yellow)</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="universal">
-                          <div className="flex items-center">
-                            <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
-                            <span>Universal (Green)</span>
-                          </div>
-                        </SelectItem>
+                      <SelectContent className="bg-neutral-800 text-white border-neutral-700">
+                        <SelectItem value="sport-specific">Sport-Specific</SelectItem>
+                        <SelectItem value="general-athletic">General Athletic Development</SelectItem>
+                        <SelectItem value="recovery-regeneration">Recovery & Regeneration</SelectItem>
+                        <SelectItem value="mental-cognitive">Mental & Cognitive Skills</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="skillLevel" className="text-white">Skill Level</Label>
+                    <Select
+                      value={activity.skill_level}
+                      onValueChange={(value) => setActivity({ ...activity, skill_level: value })}
+                    >
+                      <SelectTrigger id="skillLevel" className="bg-white/10 border-white/20 text-white">
+                        <SelectValue placeholder="Select skill level" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-neutral-800 text-white border-neutral-700">
+                        <SelectItem value="Beginner">Beginner</SelectItem>
+                        <SelectItem value="Intermediate">Intermediate</SelectItem>
+                        <SelectItem value="Advanced">Advanced</SelectItem>
+                        <SelectItem value="Professional">Professional</SelectItem>
+                        <SelectItem value="All Levels">All Levels</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
+
+                {/* Privacy Setting */}
+                <div className="space-y-2">
+                  <Label htmlFor="privacySetting" className="text-white">Privacy Setting</Label>
+                  <Select
+                    value={activity.privacy_setting}
+                    onValueChange={(value) => {
+                      setActivity({
+                        ...activity,
+                        privacy_setting: value,
+                        team_id: value === 'team' ? activity.team_id : null,
+                      });
+                    }}
+                  >
+                    <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                      <SelectValue placeholder="Select privacy setting" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-neutral-800 text-white border-neutral-700">
+                      <SelectItem value="private">Private (Only you)</SelectItem>
+                      <SelectItem value="team">Team (Selected team members)</SelectItem>
+                      <SelectItem value="public">Public (Everyone)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Team Selection (conditional) */}
+                {activity.privacy_setting === 'team' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="teamSelection" className="text-white">Select Team</Label>
+                    <Select
+                      value={activity.team_id || ''}
+                      onValueChange={(value) => setActivity({ ...activity, team_id: value })}
+                      disabled={userTeams.length === 0}
+                    >
+                      <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                        <SelectValue placeholder={userTeams.length === 0 ? "No teams available" : "Select a team"} />
+                      </SelectTrigger>
+                      <SelectContent className="bg-neutral-800 text-white border-neutral-700">
+                        {userTeams.length > 0 ? (
+                          userTeams.map((team) => (
+                            <SelectItem key={team.id} value={team.id}>
+                              {team.name}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="" disabled>
+                            You are not part of any teams or no teams found.
+                          </SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                    {userTeams.length === 0 && activity.privacy_setting === 'team' && (
+                        <p className="text-xs text-yellow-400 mt-1">You need to be a member of a team to select one. Visit the Teams page to create or join a team.</p>
+                    )}
+                  </div>
+                )}
 
                 {/* Description */}
                 <div className="space-y-2">
@@ -315,12 +384,13 @@ export default function NewActivityPage() {
                     id="description"
                     value={activity.description}
                     onChange={(e) => setActivity({ ...activity, description: e.target.value })}
-                    className="bg-white/10 border-white/20 text-white min-h-[100px]"
-                    placeholder="Describe the activity and its objectives..."
+                    className="bg-white/10 border-white/20 text-white"
+                    placeholder="Provide a detailed description of the activity..."
+                    rows={4}
                   />
                 </div>
 
-                {/* Media Section */}
+                {/* Media (Optional) */}
                 <div className="space-y-6">
                   <div className="space-y-2">
                     <Label htmlFor="videoUrl" className="text-white">Video URL</Label>

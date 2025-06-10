@@ -6,10 +6,26 @@ export async function POST(request: Request) {
   try {
     const activityData = await request.json();
     const supabase = createRouteHandlerClient({ cookies });
+
+    // Get authenticated user
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+    if (sessionError || !session?.user?.id) {
+      console.error('Error getting session or user ID:', sessionError);
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' }, 
+        { status: 401 }
+      );
+    }
+    const userId = session.user.id;
     
     // Extract tagClassification and any other UI-only fields
     // These fields are used in the frontend but not stored in the database
     const { tagClassification, ...dbSafeData } = activityData;
+
+    // Process privacy settings
+    const privacySetting = dbSafeData.privacy_setting || 'private';
+    const teamId = privacySetting === 'team' ? dbSafeData.team_id : null;
     
     // Add required fields with defaults for testing
     const activityWithUser = {
@@ -24,11 +40,13 @@ export async function POST(request: Request) {
       // Handle the renamed field - map focus_area to activity_tagging if present
       activity_tagging: dbSafeData.activity_tagging || dbSafeData.focus_area || '',
       is_custom: dbSafeData.is_custom !== undefined ? dbSafeData.is_custom : true,
-      // Using a fixed test UUID for user_id during development
-      user_id: '00000000-0000-0000-0000-000000000000',
+      user_id: userId, // Replaced hardcoded UUID with actual user ID
       // Timestamps
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
+      // Add processed privacy fields
+      privacy_setting: privacySetting,
+      team_id: teamId,
     };
     
     
